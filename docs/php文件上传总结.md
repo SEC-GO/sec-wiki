@@ -1,14 +1,3 @@
----
-title: PHP文件上传总结
-date: 2019-04-12 21:46:37
-comments: true
-toc: true
-categories:
-- CTF
-tags:
-- 文件上传
----
-
 #### 基本上传思路
 
 ##### 一、前端绕过
