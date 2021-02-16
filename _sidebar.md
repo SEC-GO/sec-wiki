@@ -3,7 +3,7 @@
   
 * WEB安全
   * [SQL注入](./docs/CTF中的SQL注入.md)
-  * [XXE注入](./docs/XXE漏洞专题.md)
+  * [XXE注入](./docs/CTF中的XXE注入.md)
   * Java安全
     * [Spring](./docs/spring相关漏洞备忘.md)
   * PHP安全
