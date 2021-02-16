@@ -77,6 +77,7 @@ XML是一种非常流行的标记语言，在1990年代后期首次标准化，�
 <root> <name>&xxe;</name> </root>
 ```
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200222114016265.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2RhaWRlMjAxMg==,size_16,color_FFFFFF,t_70)
+
 但是因为这个文件没有什么特殊符号，于是我们读取的时候可以说是相当的顺利, 那么有特殊符号的文件呢?
 
 • **对于PHP来说，可以使用伪协议返回base64字符串**
@@ -133,10 +134,14 @@ evil.dtd文件的内容为：
 ]>
 ```
 我们从 payload 中能看到 连续调用了三个参数实体 %remote;%int;%send;，这就是我们的利用顺序，%remote 先调用，调用后请求远程服务器上的 test.dtd ，有点类似于将 test.dtd 包含进来，然后 %int 调用 test.dtd 中的 %file, %file 就会去获取服务器上面的敏感文件，然后将 %file 的结果填入到 %send 以后(因为实体的值中不能有 %, 所以将其转成html实体编码 &#37;)，我们再调用 %send; 把我们的读取到的数据发送到我们的远程 vps 上。
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200222114723266.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2RhaWRlMjAxMg==,size_16,color_FFFFFF,t_70)
+
 问题1：带外数据通道的建立是使用嵌套形式，利用外部实体中的URL发出访问，从而跟攻击者的服务器发生联系
 直接在内部实体定义中引用另一个实体的方法如下，但是这种方法行不通，解析直接报错。
+
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200222114807653.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2RhaWRlMjAxMg==,size_16,color_FFFFFF,t_70)
+
 问题2：
 但是这样做行不通，原因是不能在实体定义中引用参数实体，即有些解释器不允许在内层实体中使用外部连接，无论内层是一般实体还是参数实体。
 ```xml
@@ -151,8 +156,7 @@ evil.dtd文件的内容为：
 将嵌套的实体声明放入到一个外部文件中，这里一般是放在攻击者的服务器上，这样做可以规避错误。
 
 **新的利用：**
-所以要想更进一步的利用我们不能将眼光局限于 file 协议，我们必须清楚地知道在何种平台，我们能用何种协议
-如图所示:
+所以要想更进一步的利用我们不能将眼光局限于 file 协议，我们必须清楚地知道在何种平台，我们能用何种协议,如图所示:
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/20200222114956235.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2RhaWRlMjAxMg==,size_16,color_FFFFFF,t_70)
 
 ## **2.3 JSON content-type XXE**
