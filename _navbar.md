@@ -1,12 +1,4 @@
-
-* [引擎 SDK](xengine/xengine.md)
-* [离线服务器](offlinePackage/README.md)
-* [组件](modules/README.md)
-
-<ul class="nav-href">
-</ul>
-
-<div class="github">
-	<a href="//github.com/zk4/x-engine-docs/docs" target="_blank">
-	</a>
-</div>
+* [主页](https://github.com/SEC-GO/sec-wiki/)
+* [论坛](https://github.com/SEC-GO/sec-wiki/)
+* [GitHub](https://github.com/SEC-GO/sec-wiki/)
+* [更新日志]([changelog.md](https://github.com/SEC-GO/sec-wiki/))
