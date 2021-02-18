@@ -1,3 +1,4 @@
+# **PHP反序列化漏洞**
 # **1 什么是序列化**
 序列化与反序列化我们可以很方便的在PHP中进行对象的传递。本质上反序列化是没有危害的。但是如果用户对数据可控那就可以利用反序列化构造payload攻击
 
@@ -171,7 +172,6 @@ php_serialize	| 经过 serialize() 函数反序列处理的数组
 3	session_start();
 4	// do something
 ```
-
 php中的session中的内容并不是放在内存中的，而是以文件的方式来存储的，存储方式就是由配置项session.save_handler来进行确定的，默认是以文件的方式存储。存储的文件是以sess_sessionid来进行命名的，文件的内容就是session值的序列话之后的内容。
 不同序列化引擎最终的存储结果如下，以以下代码为例进行说明：
 ```php
@@ -182,12 +182,11 @@ php中的session中的内容并不是放在内存中的，而是以文件的方�
 5	var_dump();
 6	?>
 ```
-
 序列化引擎 | 	对应的存储形式
 -|-|
-php	| name|s\:6\:"hahaha"；其中name是键值，s\:6\:"hahaha";是serialize("hahaha")的结果
-php_binary 	| names\:6\:"hahaha"；由于name的长度是4，4在ASCII表中对应的就是EOT。根据php_binary的存储规则，最后就是names\:6\:"hahaha";（ASCII的值为4的字符无法在网页上面显示）
-php_serialize	| SESSION文件的内容是a\:1\:{s\:4\:"name";s\:6\:"hahaha";}。a\:1是使用php_serialize进行序列化时都会加上，表示只有一个键值对。同时使用php_serialize会将session中的key和value都会进行序列化。
+php	|```name\|s:6:"hahaha"；其中name是键值，s:6:"hahaha";是serialize("hahaha")的结果```
+php_binary 	|```names:6:"hahaha"；由于name的长度是4，4在ASCII表中对应的就是EOT。根据php_binary的存储规则，最后就是names:6:"hahaha";（ASCII的值为4的字符无法在网页上面显示）```
+php_serialize	|```SESSION文件的内容是a:1:{s:4:"name";s:6:"hahaha";}。a:1是使用php_serialize进行序列化时都会加上，表示只有一个键值对。同时使用php_serialize会将session中的key和value都会进行序列化。```
 
 **Session 反序列化利用点:**
 PHP在反序列化存储的$_SESSION数据时使用的引擎和序列化使用的引擎不一样，会导致数据无法正确第反序列化。通过精心构造的数据包，就可以绕过程序的验证或者是执行一些系统的方法，假设存在s1.php和s2.php，2个文件所使用的SESSION的引擎不一样，就形成了一个漏洞、s1.php，使用php_serialize来处理session
@@ -281,9 +280,9 @@ file_exists($filename);
 结果输出：oh oh oh !!! 说明成功进行了反序列化
 
 有时候对传入的参数进行了一些过滤，把 phar:// 开头的直接 过滤了，也就是我要求你要用另外的反序列化的方式，这种方式不能使用 phar:// 开头，我们可以使用的是 compress.zlib://phar://xxxx 这种方式进行绕过过滤
-## **4.4 利用SOAPClient反序列化SSRF利用**
+## **4.4 利用SOAPClient反序列化**
 
-## **4.5 利用SOAPClient反序列化SSRF利用**
+## **4.5 利用SOAPClient反序列化**
 
 **相关的CTF题**
 

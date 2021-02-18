@@ -1,6 +1,5 @@
-#### 基本上传思路
-
-##### 一、前端绕过
+# **PHP中的文件上传**
+# **一、前端绕过**
 
 特点：一般只检测文件的扩展名
 判断方式：没有流量经过代理（Burpsuite）就可以证明为客户端JavaScript检测
@@ -8,7 +7,7 @@
 * 配置Burpsuite代理进行抓包，再将文件名shell.jpg改为shell.php
 * 上传页面，审查元素，修改JavaScript检测函数（firebug插件）
 
-##### 二、 基本类型绕过
+# **二、 基本类型绕过**
 
 * **** MIME类型检测 ****：检测content-type字段(image/gif),绕过方式：使用代理工具抓包修改Content-type的值
 
@@ -64,7 +63,7 @@ end函数取到了第二个给数组赋值的值，也就是filename[0]，reset�
 filename[1] = php<br>
 filename[0] = png<br>
 
-##### 三、zip、phar文件上传
+# **三、zip、phar文件上传**
 此类文件上传的绕过一般都是配合文件包含进行的，以压缩文件形式绕过上传限制，通过phar协议进行文件包含，执行webshell。
 
 * ****zip上传绕过****：我们先创建一个php文件，里面输入<?php echo phpinfo(); ?>就行了，接下来我们把php文件压缩成zip文件，必须通过测试发现只支持上传png文件，所以我们把zip文件改成png，<br>
@@ -118,7 +117,7 @@ filename[0] = png<br>
   ?>
 ```
 
-##### 五、 unlink 绕过
+# **五、 unlink 绕过**
 
 我们首先构造一个指向 /etc/passwd 的软链接文件，看看能不能成功
 root@ubuntu:~# ln -s /etc/passwd test
@@ -131,7 +130,7 @@ root@ubuntu:~# zip -y test.zip test
 
 上传然后 submit，借助文件包含漏洞，可任意读取相关文件，即使有open_basedir的限制。
 
-##### 六、Cookbook
+# **六、常见绕过方式备忘**
 
 |方式                |                      利用方式                            |
 |--------------------|---------------------------------------------------------|

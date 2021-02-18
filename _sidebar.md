@@ -7,12 +7,10 @@
   * Java安全
     * [Spring](./docs/spring相关漏洞备忘.md)
   * PHP安全
-    * [PHP反序列化](./docs/PHP反序列化漏洞.md)
-	  * [PHP文件上传](./docs/php文件上传总结.md)
-	  * [PHP文件包含](./docs/php文件上传总结.md)
+    * [反序列化](./docs/PHP反序列化漏洞.md)
+    * [文件上传](./docs/PHP文件上传总结.md)
 
 * MISC
-
   * [计算机网络](./docs/c-1计算机网络.md)
   * [数据结构](./docs/c-2数据结构.md)
   * [算法](./docs/c-3算法.md)
