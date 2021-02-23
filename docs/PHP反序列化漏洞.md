@@ -220,7 +220,6 @@ us2.php,使用php来处理session
 * LCTF-2018 bestphp's revenge
 * https://www.anquanke.com/post/id/164569
 * 安恒杯-Session反序列化
-
 ## **4.3 phar伪协议反序列化**
 利用phar文件会以序列化的形式存储用户自定义的meta-data这一特性，拓展了php反序列化漏洞的攻击面。该方法在文件系统函数（file_exists()、is_dir()等）参数可控的情况下，配合phar://伪协议，可以不依赖unserialize()直接进行反序列化操作。
 
