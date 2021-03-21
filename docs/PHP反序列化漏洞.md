@@ -360,7 +360,7 @@ $a=new DirectoryIterator("glob:///*");
 * 反序列化入口点
 * 可以触发__wakeup的触发点（在php < 5.6.11以下，可以使用内置类DateInterval）
 POC:
-```php
+```js
 class obj{
     var $ryat;
     function __wakeup(){
