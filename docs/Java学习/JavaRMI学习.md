@@ -1,4 +1,4 @@
-### Java RMI学习
+## Java RMI学习
 
 为了理解Java相关漏洞的原理，这里对Java RMI的相关原理做一个系统的学习，RMI的基本通信过程这里就不罗说了，网上一找一大堆。
 整体过程清楚但是对于细节还是一知半解，故调试一把，看看到底究竟是怎么一个过程，带着以下的疑惑一步步走。
@@ -137,7 +137,7 @@ private static Remote exportObject(Remote obj, UnicastServerRef sref)throws Remo
 至此，远程对象的导出工作已经完成。
 ```
 
-### **注册中心本身作为远程服务，又是如何发布的？**
+## **注册中心本身作为远程服务，又是如何发布的？**
 ```java
 //创建注册中心
 Registry reg = LocateRegistry.createRegistry(1099);
@@ -166,7 +166,7 @@ Registry reg = LocateRegistry.createRegistry(1099);
 //至此，RegistryImpl_Stub和RegistryImpl_Skel
 ```
 
-### 远程对象的方法是如何调用的？
+## 远程对象的方法是如何调用的？
 ```java
 //根据ip和端口获取Registry
 Registry registry = LocateRegistry.getRegistry("127.0.0.1", 1099);
