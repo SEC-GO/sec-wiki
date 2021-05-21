@@ -13,6 +13,7 @@
     * [xstream漏洞检测与利用](./docs/xstream漏洞检测与利用.md)
     * [SPEL表达式漏洞检测与利用](./docs/SPEL表达式漏洞检测与利用.md)
     * [JavaRMI原理学习](./docs/Java学习/JavaRMI学习.md)
+	* [Java RMI和JNDI攻击向量](./docs/Java学习/RMI和JNDI攻击向量.md
   * PHP安全
     * [反序列化](./docs/PHP反序列化漏洞.md)
     * [文件上传](./docs/PHP文件上传总结.md)
