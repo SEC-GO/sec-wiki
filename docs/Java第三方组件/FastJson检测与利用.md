@@ -102,8 +102,70 @@ getPrivateField has called.
 getPublicField has called.
 {"@type":"com.dds.test.TestBean","flag":{"value":"flag{ctftest}"},"privateField":"privateField","publicField":"publicField"}
 ```
-JSON 字符串中新增 @type 字段名，⽤来表明指定反序列化的⽬标对象类型为 TestBean。
+JSON 字符串中新增 @type 字段名，⽤来表明指定反序列化的⽬标对象类型为 TestBean。JSON 标准是不⽀持⾃省的，也就是说根据 JSON ⽂本，不知道它包含的对象的类型。FastJson ⽀持⾃省，在序列化时传⼊类型信息 SerializerFeature.WriteClassName ，可以得到能表明对象类型的 JSON ⽂本。FastJson 的漏洞就是由于这个功能引起的。
 ## FastJson反序列化
+### **⾮⾃省调用反序列化**
+```java
+String serJson = "{\"flag\":{\"value\":\"flag{ctftest}\"},\"privateField\":\"privateField\",\"publicField\":\"publicField\"}";
+System.out.printf("parseObject second has done => %s\n","yes");
+System.out.println(JSON.parseObject(serJson,TestBean.class));
+```
+```
+// 输出：
+parseObject second has done => yes
+TestBean constructor has called.
+Flag constructor has called.
+Flag constructor has called.
+flag setValue has called.
+setFlag has called.
+setPrivateField has called.
+setPublicField has called.
+TestBean{publicField='publicField', privateField=privateField, flag=com.dds.bean.Flag@5ba23b66}
+```
+在反序列化时，调⽤了全部的setter，没有set函数的成员则为NULL。
+### **⾃省调用反序列化**
+```java
+// parseObject方式
+String serJson2 = "{\"@type\":\"com.dds.test.TestBean\",\"flag\":{\"@type\":\"com.dds.bean.Flag\",\"value\":\"flag{ctftest}\"},\"privateField\":\"privateField\",\"publicField\":\"publicField\"}";
+System.out.printf("parseObject second has done => %s\n","yes");
+System.out.println(JSON.parseObject(serJson2));
+```
+```
+// 输出：
+parseObject has done => yes
+TestBean constructor has called.
+Flag constructor has called.
+Flag constructor has called.
+flag setValue has called.
+setFlag has called.
+setPrivateField has called.
+setPublicField has called.
+getFlag has called.
+getPrivateField has called.
+getPublicField has called.
+flag getValue has called.
+{"flag":{"value":"flag{ctftest}"},"privateField":"privateField","publicField":"publicField"}
+```
+调⽤了全部的 getter ⽅法， setter ⽅法全部调⽤。
+```java
+// parse方式
+String serJson2 = "{\"@type\":\"com.dds.test.TestBean\",\"flag\":{\"@type\":\"com.dds.bean.Flag\",\"value\":\"flag{ctftest}\"},\"privateField\":\"privateField\",\"publicField\":\"publicField\"}";
+System.out.printf("parseObject second has done => %s\n","yes");
+System.out.println(JSON.parse(serJson2));
+```
+```
+// 输出：
+Parse had done => yes
+TestBean constructor has called.
+Flag constructor has called.
+Flag constructor has called.
+flag setValue has called.
+setFlag has called.
+setPrivateField has called.
+setPublicField has called.
+TestBean{publicField='publicField', privateField=privateField, flag=com.dds.bean.Flag@30c7da1e, noSetFlag = null}
+```
+反序列化时的 getter、setter调⽤情况和⾮⾃省的⼀样。
 
 # Fast源码分析
 
