@@ -1001,6 +1001,22 @@ AutoCloseable 任意文件写入4
   }
 ```
 # 总结
+在1.2.68之后的版本，在1.2.68版本中，fastjson增加了safeMode的支持。safeMode打开后，完全禁用autoType。所有的安全修复版本sec10也支持SafeMode配置。
+
+有三种方式配置SafeMode，如下:
+
+*  在代码中配置
+ParserConfig.getGlobalInstance().setSafeMode(true); 
+注意，如果使用new ParserConfig的方式，需要注意单例处理，否则会导致低性能full gc。
+* 加上JVM启动参数-Dfastjson.parser.safeMode=true 
+如果有多个包名前缀，用逗号隔开
+
+* 通过fastjson.properties文件配置。
+通过类路径的fastjson.properties文件来配置，配置方式如下：fastjson.parser.safeMode=true
+
+* 怎么判断是否用到了autoType
+看序列化的代码中是否用到了
+JSON.toJSONString(obj, SerializerFeature.WriteClassName); // 这种使用会产生@type
 
 https://zonghaishang.github.io/2018/09/30/Fastjson%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-%E8%AF%8D%E6%B3%95%E5%92%8C%E8%AF%AD%E6%B3%95%E8%A7%A3%E6%9E%90-(%E4%B8%89)-%E9%92%88%E5%AF%B9%E5%AF%B9%E8%B1%A1%E5%AE%9E%E7%8E%B0%E8%A7%A3%E6%9E%90/
 
