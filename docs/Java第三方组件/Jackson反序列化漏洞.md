@@ -44,6 +44,7 @@ OBJECT_AND_NON_CONCRETE: 包含上述 JAVA_LANG_OBJECT 的特性，并且对于�
 */
  NON_FINAL: 包含上述所有特性，除了final定义的属性不能反序列化，其他都可以
 ```
+# 参考
 https://blog.csdn.net/qq_34101364/article/details/111996656
 
 http://pirogue.org/2018/01/12/jackson-databind-rce/
