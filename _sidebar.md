@@ -8,7 +8,8 @@
   * Java安全
     * [Spring](./docs/spring相关漏洞备忘.md)
     * [Java反序列化综合利用](./docs/Java反序列化综合利用.md)
-    * [FastJson漏洞检测与利用](./docs/Java第三方组件/FastJson检测与利用.md)
+    * [FastJson反序列化漏洞](./docs/Java第三方组件/FastJson反序列化漏洞.md)
+    * [Jackson反序列化漏洞](./docs/Java第三方组件/Jackson反序列化漏洞.md)
     * [Shiro漏洞检测与利用](./docs/Shiro漏洞检测与利用.md)
     * [xstream漏洞检测与利用](./docs/xstream漏洞检测与利用.md)
     * [SPEL表达式漏洞检测与利用](./docs/SPEL表达式漏洞检测与利用.md)
