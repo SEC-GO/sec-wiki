@@ -11,9 +11,9 @@
 ObjectMapper mapper = new ObjectMapper();
 mapper.enableDefaultTyping();
 mapper.readValue(jsonString, A.class);
-```
+
 DefaultTyping的几种模式：
-```java
+
 /**
     * This value means that only properties that have
     * {@link java.lang.Object} as declared type (including
