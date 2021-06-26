@@ -6,7 +6,7 @@
   * [XXE注入](./docs/WEB基础安全/CTF中的XXE注入.md)
   * [任意文件下载综合利用](./docs/WEB基础安全/任意文件下载综合利用.md)
   * Java安全
-    * [Spring](./docs/Java框架安全/spring相关漏洞备忘.md)
+    * [spring相关漏洞](./docs/Java框架安全/spring相关漏洞备忘.md)
     * [Java反序列化综合利用](./docs/Java反序列化漏洞/Java反序列化综合利用.md)
     * [FastJson反序列化漏洞](./docs/Java反序列化漏洞/FastJson反序列化漏洞.md)
     * [Jackson反序列化漏洞](./docs/Java反序列化漏洞/Jackson反序列化漏洞.md)
