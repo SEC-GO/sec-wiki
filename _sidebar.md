@@ -14,7 +14,7 @@
     * [xstream漏洞检测与利用](./docs/Java反序列化漏洞/xstream反序列化漏洞.md)
     * [SPEL表达式漏洞检测与利用](./docs/Java表达式注入/SPEL表达式漏洞检测与利用.md)
     * [RMI原理学习](./docs/Java反序列化漏洞/JavaRMI学习.md)
-	  * [Java RMI和JNDI攻击向量](./docs/Java反序列化漏洞/RMI和JNDI攻击向量.md)
+	* [JavaRMI和JNDI攻击向量](./docs/Java反序列化漏洞/RMI和JNDI攻击向量.md)
   * PHP安全
     * [反序列化](./docs/PHP安全/PHP反序列化漏洞.md)
     * [文件上传](./docs/PHP安全/PHP文件上传总结.md)
