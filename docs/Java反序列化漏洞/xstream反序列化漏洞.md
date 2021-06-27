@@ -151,6 +151,7 @@ xstream.fromXML(payload);
 * 步骤三：Proxy对象将所有的方法调用委托给EventHandler。
 * 步骤四：EventHandler在其invokeInternal函数中调用配置ProcessBuilder的start()方法。
 * 步骤五：ProcessBuilder派生一个新进程，运行攻击者希望执行的命令。
+
 # **防御总结**
 http://www.pwntester.com/blog/2013/12/23/rce-via-xstream-object-deserialization38/
 
