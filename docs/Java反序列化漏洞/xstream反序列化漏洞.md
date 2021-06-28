@@ -159,7 +159,7 @@ xstream.omitField(Customer.class, "firstName");
 
 ## **Converters（XStream 转换器）**
 XStream本身定义了很多转换器实例，每个实例都有自己的转换策略，这些策略提供将对象数据转换为XML中的特定格式或者将XML转换回对象数据。除了使用默认转换器，我们还可以修改默认值或注册自定义转换器。
-### **Modifying an Existing Converter**
+### **Modifying an Existing Converter（修改转换器）**
 ```java
 // 1. Modifying an Existing Converter
 // 假设我们不满意使用默认设置生成dob标记的方式，我们可以修改XStream（DateConverter）提供的日期的自定义转换器：
@@ -171,7 +171,7 @@ xstream.registerConverter(new DateConverter("dd-MM-yyyy", null));
     <dob>14-02-1986</dob>
 </customer>
 ```
-### **Custom Converters**
+### **Custom Converters（自定义转换器）**
 我们还可以创建一个自定义转换器，以实现与上一节相同的输出：
 ```java
 public class MyDateConverter implements Converter {
