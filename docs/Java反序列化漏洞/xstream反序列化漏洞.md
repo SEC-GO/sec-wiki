@@ -21,7 +21,7 @@ class Address{
     // 省略get和set函数
 }
 ```
-**由Object生成XML：**
+## **由Object生成XML：**
 ```java
 Person person = new Person();
 person.setFirstName("jack");
@@ -52,7 +52,7 @@ System.out.println(xml);
 ```
 在这两种情况下，XStream都使用Java反射将Person类型转换为XML或从XML转换为Person类型。攻击发生在读取XML期间。在读取XML时，XStream使用反射实例化Java类。
 
-**由XML生成Object：**
+## **由XML生成Object：**
 ```java
  String testXMl = "<person>\n" +
                 "  <firstName>jack</firstName>\n" +
@@ -70,21 +70,130 @@ System.out.println(obj);
 -----------------------------------------输出---------------------------------------------
 [firstName = jack,lastName = Ma,address = [country = China,province = ZheJiang,city = HangZhou]
 ```
-**别名配置的方式**
-* 可以通过类注解实现@XStreamAlias,比如XStreamAlias("person");采用这种方式的时候，需要注意xStream实例化的时候，加上 xStream.processAnnotationsPerson.class); 通过注解方式的，一定要有这句话
-
-* 可以通过配置Xstream设置实现；比如xStream.alias("person",Person.class);
-
-**其他特性**
-* 类成员别名，用xStream.aliasField(String alias, Class definedIn, String fieldName)。
-
-* 将某一个类的属性，作为xml头信息的属性，而不是子节点，用xStream.useAttributeFor(Class definedIn, String fieldName)。
-
+## **别名配置的方式**
+别名是我们希望用于元素的名称，而不是使用默认名称。例如，我们可以通过注册Customer类的别名将com.baeldung.pojo.Customer替换为Customer。我们还可以为类的属性添加别名。通过使用别名，我们可以使XML输出更具可读性。
+### **Class 别名**
+通过编程或使用注释向XStream实例注册别名，可以用@XStreamAlias注解别名：
+```java
+//采用这种方式的时候，需要注意xStream实例化的时候，加上 xStream.processAnnotationsPerson.class);配置。
+@XStreamAlias("customer")
+public class Customer{
+  //.......
+}
+//或者可以以编程方式配置别名，可以使用以下代码：
+xstream.alias("customer", Customer.class);
+```
+### **Field 别名**
+可以为类的字段添加别名。例如，如果希望在XML表示中用fn替换字段firstName，可以使用以下注释：
+```java
+@XStreamAlias("fn")
+private String firstName;
+//或者可以以编程方式为类的字段配置别名，可以使用以下代码：
+xstream.aliasField("fn", Customer.class, "firstName");
+```
+### **XStream默认别名**
+XStream为一些常用类预先注册了几个别名：
+```java
+alias("float", Float.class);
+alias("date", Date.class);
+alias("gregorian-calendar", Calendar.class);
+alias("url", URL.class);
+alias("list", List.class);
+alias("locale", Locale.class);
+alias("currency", Currency.class);
+alias("sorted-set", SortedSet.class); // 后面的POC中出现
+.......
+```
+### **Implicit Collections（隐式集合）**
+假设我们有以下XML，包含一个简单的ContactDetails列表:
+```xml
+<customer>
+    <firstName>John</firstName>
+    <lastName>Doe</lastName>
+    <dob>1986-02-14 04:14:20.541 UTC</dob>
+    <ContactDetails>
+        <mobile>6673543265</mobile>
+        <landline>0124-2460311</landline>
+    </ContactDetails>
+    <ContactDetails>...</ContactDetails>
+</customer>
+```
+我们希望将ContactDetails列表加载到Java对象的list<ContactDetails>字段中。我们可以通过使用以下注释来实现这一点：
+```java
+@XStreamImplicit
+private List<ContactDetails> contactDetailsList;
+//或者，可以通过编程实现相同的目的：
+xstream.addImplicitCollection(Customer.class, "contactDetailsList");
+```
+### **Ignore Fields（忽略字段）**
+XStream在实施xml to object的时候碰到无法识别字段会抛出异常。要解决此问题，需要将其配置为忽略未知元素：
+```java
+xstream.ignoreUnknownElements();
+```
+### **Attribute Fields（属性字段）**
+假设要将带有属性的XML作为元素的一部分，并将其序列化或反序列化为对象中的字段。可将ContactDetails对象添加contactType属性：
+```xml
+<ContactDetails contactType="Office">
+    <mobile>6673543265</mobile>
+    <landline>0124-2460311</landline>
+</ContactDetails>
+```
+如果我们想反序列化contactType XML属性，我们可以在希望它出现的字段上使用@XStreamAsAttribute注释：
+```java
+@XStreamAsAttribute
+private String contactType;
+//或者，可以通过编程实现相同的目的：
+xstream.useAttributeFor(ContactDetails.class, "contactType");
+```
+### **Omitting Fields（省略字段）**
+Xstream在生成XML的过程中可忽略自定的字段：
+```java
+@XStreamOmitField 
+private String firstName;
+//In order to omit the field programmatically, we use the following method:
+xstream.omitField(Customer.class, "firstName");
+```
+### **其他特性**
 * 指定类成员属性别名，用 aliasAttribute(Class definedIn, String attributeName, String alias)，单独命名没有意义，还要通过useAttributeFor(Class definedIn, String fieldName) 应用到某个类上。如：将Person的firstName指定为XML属性并用别名表示。
-
 * XStream默认当String类型的属性值为null时不封装到xml中。可以根据实际传xml情况，选择对象属性set空字符串还是null。
-* 隐藏跟属性节点的时候，需要使用addImplicitCollection，比如：xStream.addImplicitCollection(Person.class,"lists");
 
+## **Converters（XStream 转换器）**
+XStream本身定义了很多转换器实例，每个实例都有自己的转换策略，这些策略提供将对象数据转换为XML中的特定格式或者将XML转换回对象数据。除了使用默认转换器，我们还可以修改默认值或注册自定义转换器。
+### **Modifying an Existing Converter**
+```java
+// 1. Modifying an Existing Converter
+// 假设我们不满意使用默认设置生成dob标记的方式，我们可以修改XStream（DateConverter）提供的日期的自定义转换器：
+xstream.registerConverter(new DateConverter("dd-MM-yyyy", null));
+// 以上的配置将产生“dd-MM-yyyy” 的日期格式:
+<customer>
+    <firstName>John</firstName>
+    <lastName>Doe</lastName>
+    <dob>14-02-1986</dob>
+</customer>
+```
+### **Custom Converters**
+我们还可以创建一个自定义转换器，以实现与上一节相同的输出：
+```java
+public class MyDateConverter implements Converter {
+
+    private SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+
+    @Override
+    public boolean canConvert(Class clazz) {
+        return Date.class.isAssignableFrom(clazz);
+    }
+
+    @Override
+    public void marshal(Object value, HierarchicalStreamWriter writer, MarshallingContext arg2) {
+        Date date = (Date)value;
+        writer.setValue(formatter.format(date));
+    }
+
+    // other methods
+}
+// 最后，我们注册MyDateConverter类如下：
+xstream.registerConverter(new MyDateConverter());
+```
 # **How the Attack Works**
 XStream实例化的类由它解析的XML元素的名称决定。
 因为我们将XStream配置为知道Person类型，所以XStream在解析名为“Person”的XML元素时会实例化一个新的Person。
