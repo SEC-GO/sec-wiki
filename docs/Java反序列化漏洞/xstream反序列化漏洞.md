@@ -261,6 +261,13 @@ xstream.fromXML(payload);
 * 步骤四：EventHandler在其invokeInternal函数中调用配置ProcessBuilder的start()方法。
 * 步骤五：ProcessBuilder派生一个新进程，运行攻击者希望执行的命令。
 
+# **XStream 远程代码执行漏洞（CVE-2019-10173）**
+https://paper.seebug.org/1417/
+# **XStream 远程代码执行漏洞（CVE-2020-26217）**
+https://paper.seebug.org/1417/
+https://www.cnblogs.com/v1ntlyn/p/14034019.html
+# **XStream 远程代码执行漏洞（CVE-2021-XXXXX）**
+
 # **防御总结**
 http://www.pwntester.com/blog/2013/12/23/rce-via-xstream-object-deserialization38/
 
