@@ -262,16 +262,31 @@ xstream.fromXML(payload);
 * 步骤五：ProcessBuilder派生一个新进程，运行攻击者希望执行的命令。
 
 # **XStream 远程代码执行漏洞（CVE-2019-10173）**
-https://paper.seebug.org/1417/
+Xstream 1.4.7对于漏洞（CVE-2013-7285）的防御措施：通过在com.thoughtworks.xstream.converters.reflection.ReflectionConverter添加type != eventHandlerType阻止ReflectionConverter解析java.beans.EventHandler类。由于在Xstream1.4.10中的com.thoughtworks.xstream.XStream类增加了setupDefaultSecurity()方法但是安全模式默认不开启，必须在初始化后才可以使用，XStream.setupDefaultSecurity(xStream)。导致防御失效，造成漏洞的第二次出现。1.4.11之后，加入了一个新的Converter类InternalBlackList，与XStream类在同一文件中，可以进行黑名单匹配，从而防御了此漏洞。
 # **XStream 远程代码执行漏洞（CVE-2020-26217）**
 https://paper.seebug.org/1417/
 https://www.cnblogs.com/v1ntlyn/p/14034019.html
 # **XStream 远程代码执行漏洞（CVE-2021-XXXXX）**
 
 # **防御总结**
-http://www.pwntester.com/blog/2013/12/23/rce-via-xstream-object-deserialization38/
+XStream在1.4.7版本中引入了一个安全框架，我们可以使用安全框架来抵御远程代码执行攻击。安全框架允许我们使用白名单来配置XStream允许反序列化的类。XStream提供了一些TypePermission实现，允许任何类型或不允许任何类型，允许基元类型及其对应的null、数组类型，实现通过正则或通配符表达式匹配类型的名称。
+Example Code Whitelist：
+```java
+XStream xstream = new XStream();
+// clear out existing permissions and start a whitelist
+xstream.addPermission(NoTypePermission.NONE);
+// allow some basics
+xstream.addPermission(NullPermission.NULL);
+xstream.addPermission(PrimitiveTypePermission.PRIMITIVES);
+// Collection
+xstream.allowTypeHierarchy(Collection.class);
+// allow any type from the same package
+xstream.allowTypesByWildcard(new String[] {
+    Blog.class.getPackage().getName()+".*"
+});
+```
+其他更多设置请参照：https://x-stream.github.io/security.html
 
-https://blog.csdn.net/weixin_39635657/article/details/111104938
 # **参考**
 Xstream特性：
 https://www.baeldung.com/xstream-deserialize-xml-to-object
