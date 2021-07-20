@@ -6,12 +6,12 @@
 * readfile()
 
 **1. include()/include_once()**
-配置项开关	| 包含本地路径文件 | 包含远程链接文件	| 伪协议方式包含 
--|-|-|-|
-allow_url_fopen = Off \| allow_url_include = Off	| YES | NO	| NO 
-allow_url_fopen = Off \| allow_url_include = On	| YES | NO	| YES 
-allow_url_fopen = On \| allow_url_include = Off	| YES | NO	| NO 
-allow_url_fopen = On \| allow_url_include = On     | YES | YES	| YES 
+|配置项开关	| 包含本地路径文件 | 包含远程链接文件	| 伪协议方式包含 |
+|-|-|-|-|
+allow_url_fopen = Off \| allow_url_include = Off	| YES | NO	| NO |
+allow_url_fopen = Off \| allow_url_include = On	| YES | NO	| YES |
+allow_url_fopen = On \| allow_url_include = Off	| YES | NO	| NO |
+allow_url_fopen = On \| allow_url_include = On     | YES | YES	| YES |
 ||||
 
 **结论：**
@@ -22,24 +22,24 @@ allow_url_fopen单独开启没有实质作用，但是和 allow_url_include 结�
 require() 和 include() 是一样的结果，同上。
 
 **3. readfile()**
-配置项开关	| 包含本地路径文件 | 包含远程链接文件	| 伪协议方式包含 
--|-|-|-|
-allow_url_fopen = Off \| allow_url_include = Off	| YES | NO	| NO 
-allow_url_fopen = Off \| allow_url_include = On	| YES | NO	| YES 
-allow_url_fopen = On \| allow_url_include = Off	| YES | YES	| YES 
-allow_url_fopen = On \| allow_url_include = On     | YES | YES	| YES 
+|配置项开关	| 包含本地路径文件 | 包含远程链接文件	| 伪协议方式包含 |
+|-|-|-|-|
+allow_url_fopen = Off \| allow_url_include = Off	| YES | NO	| NO |
+allow_url_fopen = Off \| allow_url_include = On	| YES | NO	| YES |
+allow_url_fopen = On \| allow_url_include = Off	| YES | YES	| YES |
+allow_url_fopen = On \| allow_url_include = On     | YES | YES	| YES |
 ||||
 
 **结论：**
 对readfile()：allow_url_include 对其没有任何影响，allow_url_fopen 能让其包含远程文件
 
 **4. file_get_contents()**
-配置项开关	| 包含本地路径文件 | 包含远程链接文件	| 伪协议方式包含 
--|-|-|-|
-allow_url_fopen = Off \| allow_url_include = Off	| YES | NO	| YES 
-allow_url_fopen = Off \| allow_url_include = On	| YES | NO	| YES 
-allow_url_fopen = On \| allow_url_include = Off	| YES | YES	| YES 
-allow_url_fopen = On \| allow_url_include = On     | YES | YES	| YES
+|配置项开关	| 包含本地路径文件 | 包含远程链接文件	| 伪协议方式包含 |
+|-|-|-|-|
+allow_url_fopen = Off \| allow_url_include = Off	| YES | NO	| YES |
+allow_url_fopen = Off \| allow_url_include = On	| YES | NO	| YES |
+allow_url_fopen = On \| allow_url_include = Off	| YES | YES	| YES |
+allow_url_fopen = On \| allow_url_include = On     | YES | YES	| YES|
 ||||
 
 **结论：**
