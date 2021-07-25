@@ -161,7 +161,7 @@ PS: 上传test.php:a.jpg的时候其实是在服务器上正常生成了一个�
 # php 伪协议包含
 php://input 你要用还是需要 allow_url_include 打开<br>
 data:// 更是需要 php_url_fopen 和 php_uri_include 都打开<br>
-### **php://input**<br>
+## **php://input**<br>
 php://input 是个可以访问请求的原始数据的只读流(这个原始数据指的是POST数据)
 ![avatar](../images/php_input.png)
 ![avatar](../images/php_input_shell.png)
@@ -250,7 +250,7 @@ include "php://filter/resource=phar://./phar.phar/test.txt";
 ```
 参考：https://www.php.net/manual/zh/wrappers.php.php
 
-# **通过软链接文件**
+## **通过软链接文件**
 通过软链接的方式进行文件读取包含可绕过open_basedir的限制
 相关赛题：HCTF2018 hide and seek : https://xz.aliyun.com/t/3245#toc-6.
 我们首先构造一个指向 /etc/passwd 的软链接文件，看看能不能成功
