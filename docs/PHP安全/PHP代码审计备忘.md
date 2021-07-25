@@ -49,11 +49,33 @@ php在接受一个带0x的字符串的时候，会自动把这行字符串解析
 布尔值转换问题
 ```php
 <?php
-      If( true = “name”){
-          echo “success”;
+      If( true = "name"){
+          echo "success";
 }
 ```
 布尔值可以和任何字符串相等。
+## **利用数组绕过数值比较**
+```php
+$AA[]='admin';
+if($AA < 9999999999){
+    echo "hello world";
+}
+else if ((string)$AA>0) {
+    echo 'A_A,too big';
+}
+if ((string)$AA == 0) {
+    echo "ddddddddddd";
+}
+（1）无论你的数字多大，对于数值而言总是比数组小
+（2）强制转化为字符串在与数字比较的判断，这就是平常操作很多的弱类型了，直接让参数等于admin就可以了，因为"admin"== 0 ，结果是true，直接等于0绕过即可, 即(string)$AA == 0成立
+```
+## **md5(array)==0**
+```php
+$value[] = 1;
+var_dump(md5($value)); // NULL
+var_dump(substr(md5($value),5,4)==0); // true
+// md5()一个array返回null，null==0成立
+```
 ## **总结**
 * 1、字符串和数字比较，字符串会被转换成数字。<br>
 * 2、混合字符串转换成数字，看字符串的第一个。<br>
@@ -76,21 +98,6 @@ int strcmp ( string str1, string str1, string str2 ),
         }
 ?>
 我们传入password[]=xxx ，绕过成功。原理是因为函数接受到了不符合的类型，将发生错误，函数返回值为0，所以判断相等。
-```
-## **利用数组绕过数值比较**
-```php
-$AA[]='admin';
-if($AA < 9999999999){
-    echo "hello world";
-}
-else if ((string)$AA>0) {
-    echo 'A_A,too big';
-}
-if ((string)$AA == 0) {
-    echo "ddddddddddd";
-}
-（1）无论你的数字多大，对于数值而言总是比数组小
-（2）强制转化为字符串在与数字比较的判断，这就是平常操作很多的弱类型了，直接让参数等于admin就可以了，因为“admin”== 0 ，结果是true，直接等于0绕过即可, 即(string)$AA == 0成立
 ```
 ## **is_numeric()漏洞**
 ```php
