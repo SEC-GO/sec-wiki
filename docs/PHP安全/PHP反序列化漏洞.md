@@ -220,6 +220,7 @@ us2.php,使用php来处理session
 * LCTF-2018 bestphp's revenge
 * https://www.anquanke.com/post/id/164569
 * 安恒杯-Session反序列化
+
 ## **4.3 phar伪协议反序列化**
 利用phar文件会以序列化的形式存储用户自定义的meta-data这一特性，拓展了php反序列化漏洞的攻击面。该方法在文件系统函数（file_exists()、is_dir()等）参数可控的情况下，配合phar://伪协议，可以不依赖unserialize()直接进行反序列化操作。
 
@@ -283,6 +284,7 @@ file_exists($filename);
 **伪协议读取phar绕过过滤进行反序列化：**<br>
 * php://filter/read=convert.base64-encode/resource=phar://./xx/aaa.phar<br>
 * php://filter/resource=phar://./xx/aaa.phar
+
 ## **4.4 利用SOAPClient反序列化进行SSRF**
 SOAP : Simple Object Access Protocol简单对象访问协议，采用HTTP作为底层通讯协议，XML作为数据传送的格式。
 
@@ -405,6 +407,7 @@ poc里的s:1:"1"要改成s:1:"4"，其中的4决定了GMP覆盖的对象是哪�
 * LCTF-2018 T4lk 1s ch34p,sh0w m3 the sh31l
 * https://paper.seebug.org/680/
 * http://www.k0rz3n.com/2018/11/19/LCTF%202018%20T4lk%201s%20ch34p,sh0w%20m3%20the%20sh31l%20%E8%AF%A6%E7%BB%86%E5%88%86%E6%9E%90/
+
 # **5 参考文献**
 【1】https://blog.spoock.com/2016/10/16/php-serialize-problem/<br>
 【2】https://xz.aliyun.com/t/6057<br>
