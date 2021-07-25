@@ -246,6 +246,7 @@ file_put_contents("php://filter/write=string.rot13/resource=example.txt","Hello 
 <?php
 include "php://filter/read=convert.base64-decode/resource=php://input";
 include "php://filter/read=convert.base64-decode/resource=phar://./phar.phar/test.txt";
+include "php://filter/resource=phar://./phar.phar/test.txt";
 ```
 参考：https://www.php.net/manual/zh/wrappers.php.php
 
