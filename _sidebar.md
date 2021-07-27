@@ -5,6 +5,7 @@
   * [SQL注入](./docs/WEB基础安全/CTF中的SQL注入.md)
   * [XXE注入](./docs/WEB基础安全/CTF中的XXE注入.md)
   * [任意文件下载综合利用](./docs/WEB基础安全/任意文件下载综合利用.md)
+  * [CTF中的SSRF](./docs/WEB基础安全/CTF中的SSRF.md)
   * Java安全
     * [spring相关漏洞](./docs/Java框架安全/spring相关漏洞备忘.md)
     * [Java反序列化综合利用](./docs/Java反序列化漏洞/Java反序列化综合利用.md)
