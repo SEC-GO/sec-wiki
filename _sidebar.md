@@ -24,8 +24,9 @@
     * [文件包含](./docs/PHP安全/PHP文件包含总结.md)
     * [绕waf的相关代码、命令执行技巧](./docs/PHP安全/PHP绕waf的相关代码、命令执行技巧.md)
   * python安全
-    * [反序列化](./docs/Python安全/python反序列化漏洞.md)
-    * [模板注入](./docs/Python安全/python模板注入总结.md)
+    * [python反序列化](./docs/Python安全/python反序列化总结.md)
+    * [python模板注入](./docs/Python安全/python模板注入总结.md)
+    * [python沙箱逃逸](./docs/Python安全/python沙箱逃逸总结.md)
 
   
 
