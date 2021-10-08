@@ -309,6 +309,103 @@ def filterSerialize(data=''):
 
 #### **2.1 安装Java RSAP**
 #### **2.2 审计代码与修补漏洞**
+
+##### 2.2.1反编译及代码审计
+
+Java题目按应用介质形态一般可以分为jsp文件、war和可以独立运行的jar。若是war或jar，则使用jd-gui工具反编译获取源码，具体操作可以参考`jar、war包热修复`中的内容。注：将jar包直接拖进jd-gui进行反编译，依赖包也会被反编译，这样可能导致反编译时间过长，故若遇到整个jar反编译时间过长，可先对jar包进行解压缩，然后将解压得到的.class文件拖进jd-gui进行反编译，然后File->Save All Sources即可。
+
+使用javaID优化版本(原版只扫描.java、.xml文件，不扫描.jsp，优化版本还优化了扫描规则)进行代码审计，命令：`python javaid.py -d dir`
+
+另外，参考`jar、war包热修复`中的内容将代码（含依赖包）导入到IDE里面进行人工代码审计。
+
+
+
+##### 2.2.2漏洞修复
+
+不影响功能使用的情况下直接注释掉漏洞代码。
+
+###### 1.路径穿越
+
+```
+if(name.contains("flag")||name.contains("./")||name.contains("../")||name.contains("%")) {
+	return "hacker";
+}
+```
+
+###### 2.命令注入
+
+```
+private static final Pattern FILTER_PATTERN = Pattern.compile("^[a-zA-Z0-9_/\\.-]+$");
+if (!FILTER_PATTERN.matcher(sql).matches()) {
+   return "hacker";
+}
+```
+
+###### 3.XXE
+
+参考`CheatSheetSeries`中的`XML_External_Entity_Prevention_Cheat_Sheet`
+
+###### 4.SpEL表达式注入
+
+将StandardEvaluationContext替代为SimpleEvaluationContext，由于StandardEvaluationContext权限过大，可以执行任意代码，会被恶意用户利用。SimpleEvaluationContext的权限则小的多，只支持一些map结构，通用的jang.lang.Runtime,java.lang.ProcessBuilder都已经不再支持。
+
+```
+参考1:
+A a=new A("ruilin");
+ExpressionParser parser = new SpelExpressionParser();
+EvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject(a).build();
+String name = (String) exp.getValue(context);
+System.out.println(name);
+
+参考2:
+String expression = request.getParameter("message");
+ExpressionParser parser = new SpelExpressionParser();
+Expression exp = parser.parseExpression(expression);
+StandardEvaluationContext context = SimpleEvaluationContext.forReadOnlyDataBinding().withRootObject().build();
+String message = exp.getValue(context, String.class);
+exp.setValue(context, "Hello");
+```
+
+###### 5.反序列化漏洞
+
+升级第三方组件
+
+
+
+##### Java重打包（jar包修复）
+
+###### 1.GUI界面操作
+
+用winwar等解压缩软件打开war或jar，找到待更新的文件，直接将新的修复好的同名文件拖拽进去替换即可。
+
+###### 2.命令操作
+
+0.先对原始应用包进行备份。
+
+1.查找修复的类文件的路径，比如修复了SecurityConfig.java
+
+```
+jar vtf easybank.jar|grep SecurityConfig
+  6250 Wed Aug 05 22:03:08 CST 2020 BOOT-INF/classes/com/hendisantika/onlinebanking/config/SecurityConfig.class
+```
+
+2.解压被修复的文件对应的class
+
+```
+jar xvf easybank.jar BOOT-INF/classes/com/hendisantika/onlinebanking/config/SecurityConfig.class
+```
+
+3.用修复好的SecurityConfig.class覆盖上一步解压出来的原始文件
+
+4.更新jar包
+
+```
+ jar uvf easybank.jar BOOT-INF/classes/com/hendisantika/onlinebanking/config/SecurityConfig.class
+正在添加: BOOT-INF/classes/com/hendisantika/onlinebanking/config/SecurityConfig.class(输入 = 6217) (输出 = 2023)(压缩了 67%)
+```
+
+命令操作也可以参考`jar、war包热修复`
+
 #### **2.3 漏洞利用**
 #### **2.4 监控与应急响应**
 
