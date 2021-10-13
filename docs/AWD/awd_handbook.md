@@ -21,19 +21,7 @@ ls 查看是否备份成功,下载到本地离线保存
 ```sh
 scp -r ctf@ip:/var/www/html ip #将服务器上的/var/www/html备份到本地的ip目录，如果端口不是22，可以用-P port指定。
 ```
-#### **1.3 修改数据库密码**
-测试数据库是否能远程连接，如果不能远程连接，则一般无需更改。在远程机器上测试连接：
-```sh
-mysql -h ip -u root -p
-```
-如果数据库是能够远程连接，则应更改数据库密码，$\color{red}{并更新应用中的数据库配置}$
-```sh
-mysql -h 127.0.0.1 -u root -p
-set password for root@127.0.0.1=password('nongfushanquan');
-flush privileges;
-update user set password = PASSWORD('nongfushanquan') where user = 'root';
-```
-#### **1.4 备份数据库**
+#### **1.3 备份数据库**
 去源代码中找数据库连接信息
 ```sh
 grep "mysqli_connect" *.php      #php应用
@@ -45,6 +33,19 @@ show databases;
 mysqldump -h host -u root -p Test >Test0809.sql #输入密码即可
 ```
 ls 查看是否备份成功,下载到本地离线保存，此步也可以使用navicat客户端，在界面上操作进行备份。
+
+#### **1.4 修改数据库密码**
+测试数据库是否能远程连接，如果不能远程连接，则一般无需更改。在远程机器上测试连接：
+```sh
+mysql -h ip -u root -p
+```
+如果数据库是能够远程连接，则应更改数据库密码，$\color{red}{并更新应用中的数据库配置}$
+```sh
+mysql -h 127.0.0.1 -u root -p
+set password for root@127.0.0.1=password('nongfushanquan');
+flush privileges;
+update user set password = PASSWORD('nongfushanquan') where user = 'root';
+```
 
 #### **其他（非必要）**
 
@@ -201,7 +202,7 @@ function easyFilter($string) {
 
 ### 三、Python加固、审计、应急
 
-#### **2.1 安装python waf**
+#### **3.1 安装python waf**
 **Flask Waf 安装步骤:**
 
 复制hookWaf.py至flask项目根目录下
@@ -248,14 +249,14 @@ def awdlog():
     f.writelines('\n\n')
     f.close()
 ```
-#### **2.2 审计代码**
+#### **3.2 审计代码**
 使用PYTHON代码审计工具进行代码审计,删除或者注释掉明显的后门命令、代码执行后门。
 
-#### **2.3 漏洞利用**
+#### **3.3 漏洞利用**
 * 对审计出的明显的后门木马、命令执行、代码注入、反序列化、文件包含、文件上传漏洞快速编写利用脚本进行攻击，拿flag。
 * 对waf日志监控中看到的攻击payload,进行快速编写利用脚本进行攻击，拿flag。
 
-#### **2.3 漏洞修补**
+#### **3.4 漏洞修补**
 ```python
 #!/usr/bin/python3
 # coding=utf-8
@@ -301,30 +302,85 @@ def filterSerialize(data=''):
     return data
 
 ```
-#### **2.4 监控与应急响应**
+#### **3.5 监控与应急响应**
 **进程监控**
 上传进程监控脚本至web服务目录，如/var/www/html/，修改参数，启动监控脚本。
 
-### 四、Java审计、加固、应急
+### **四、Java审计、加固、应急**
 
-#### **2.1 安装Java RSAP**
-#### **2.2 审计代码与修补漏洞**
+#### **4.1 Java RSAP安装及使用**
 
-##### 2.2.1反编译及代码审计
+AWD比赛时推荐使用RASP的离线版本（不需要RASP管理平台），下面只介绍离线版本的安装使用。
+
+##### **4.1.1 tomcat、jboss等容器RSAP安装与卸载**
+
+对于tomcat、jboss等有安装目录的服务器容器，安装步骤如下：
+1. 将rasp-java.zip解压，并进入到解压后的目录；
+
+2. 安装RSAP
+
+```
+java -jar RaspInstall.jar -install /xxxx/xxxx/xxx/tomcat（tomcat或jboss的根目录）
+```
+
+3. 重启服务器，rasp生效
+
+4. 卸载RSAP(卸载完成后需要重启服务器)
+
+```
+java -jar RaspInstall.jar -uninstall /xxxx/xxxx/xxx/tomcat（tomcat或jboss的根目录）
+```
+
+##### **4.1.2 Spring Boot等容器RSAP安装与卸载**
+
+对于Spring Boot等直接通过java -jar xxxx.jar方式启动的服务器，安装步骤如下：
+
+1. 将rasp-java.zip解压，找到解压后的目录的子目录`rasp`中`rasp.jar`的路径，如`/home/xxxx/xxxx/rasp-2021-10-11/rasp/rasp.jar`；
+
+2. 启动Spring Boot(`-jar xxx.jar`必须放在`-javaagent`后面，不能顺序颠倒)
+
+```
+java -javaagent:/home/xxxx/xxxx/rasp-2021-10-11/rasp/rasp.jar -jar XXX.jar
+```
+
+##### **4.1.3 RSAP使用**
+
+1. RASP工作目录
+	rasp安装完成后，会有一个工作目录，主要存在js插件、报文记录日志、漏洞日志等。
+	对于tomcat、jboss等有安装目录的服务器容器，安装rasp后会自动在tomcat/jboss的根目录下释放一个rasp目录，这个目录就是rasp的工作目录。（并不是rasp-java.zip的解压目录！！！！！！）
+	对于Spring Boot等直接通过java -jar xxx.jar方式启动的服务器，rasp的工作目录就是rasp-java.zip解压后的目录中的`rasp`子目录.
+
+2. 报文记录日志
+	rasp会记录http请求报文（目前只能记录get的请求报文和部分post的报文头，返回报文和post的报文体无法记录），报文存储的路径是 `rasp工作目录/logs/http.log`
+
+3. 攻击信息日志
+	当rasp拦截到攻击后，会把攻击信息存储，存储位置是 `rasp工作目录/logs/alarm/alarm.log`
+
+4. IP黑名单配置（配置时时生效，不需要重启服务器）
+	RASP新增了配置IP黑名单功能，配置IP黑名单后，目标IP将不能访问服务器的所有接口。配置方法：
+	修改配置文件 `rasp工作目录/conf/openrasp.yml`，找到`ip.black_list:`，取消该行的注释（默认情况下被注释掉了），在该行下面添加ip黑名单（每一个ip单独一行，格式是：两个空格、一个‘-’、一个空格、双引号ip）：
+```
+ip.black_list:
+  - "192.168.232.1"
+  - "192.168.232.136"
+```
+
+#### **4.2 反编译及代码审计**
 
 Java题目按应用介质形态一般可以分为jsp文件、war和可以独立运行的jar。若是war或jar，则使用jd-gui工具反编译获取源码，具体操作可以参考`jar、war包热修复`中的内容。注：将jar包直接拖进jd-gui进行反编译，依赖包也会被反编译，这样可能导致反编译时间过长，故若遇到整个jar反编译时间过长，可先对jar包进行解压缩，然后将解压得到的.class文件拖进jd-gui进行反编译，然后File->Save All Sources即可。
 
-使用javaID优化版本(原版只扫描.java、.xml文件，不扫描.jsp，优化版本还优化了扫描规则)进行代码审计，命令：`python javaid.py -d dir`
+使用javaID优化版本(原版只扫描.java、.xml文件，不扫描.jsp，优化版本还优化了扫描规则)进行代码审计，命令：
+```
+python javaid.py -d dir
+```
 
 另外，参考`jar、war包热修复`中的内容将代码（含依赖包）导入到IDE里面进行人工代码审计。
 
-
-
-##### 2.2.2漏洞修复
+##### **4.2.1漏洞修复**
 
 不影响功能使用的情况下直接注释掉漏洞代码。
 
-###### 1.路径穿越
+**(1).路径穿越**
 
 ```
 if(name.contains("flag")||name.contains("./")||name.contains("../")||name.contains("%")) {
@@ -332,7 +388,7 @@ if(name.contains("flag")||name.contains("./")||name.contains("../")||name.contai
 }
 ```
 
-###### 2.命令注入
+**(2).命令注入**
 
 ```
 private static final Pattern FILTER_PATTERN = Pattern.compile("^[a-zA-Z0-9_/\\.-]+$");
@@ -341,11 +397,11 @@ if (!FILTER_PATTERN.matcher(sql).matches()) {
 }
 ```
 
-###### 3.XXE
+**(3).XXE**
 
 参考`CheatSheetSeries`中的`XML_External_Entity_Prevention_Cheat_Sheet`
 
-###### 4.SpEL表达式注入
+**(4).SpEL表达式注入**
 
 将StandardEvaluationContext替代为SimpleEvaluationContext，由于StandardEvaluationContext权限过大，可以执行任意代码，会被恶意用户利用。SimpleEvaluationContext的权限则小的多，只支持一些map结构，通用的jang.lang.Runtime,java.lang.ProcessBuilder都已经不再支持。
 
@@ -366,21 +422,20 @@ String message = exp.getValue(context, String.class);
 exp.setValue(context, "Hello");
 ```
 
-###### 5.反序列化漏洞
+**(5).反序列化漏洞**
 
 升级第三方组件
 
 
+##### **4.2.2 Java重打包（jar包修复）**
 
-##### Java重打包（jar包修复）
-
-###### 1.GUI界面操作
+**(1).GUI界面操作** 
 
 用winwar等解压缩软件打开war或jar，找到待更新的文件，直接将新的修复好的同名文件拖拽进去替换即可。
 
-###### 2.命令操作
+**(2).命令操作**
 
-0.先对原始应用包进行备份。
+1.先对原始应用包进行备份。
 
 1.查找修复的类文件的路径，比如修复了SecurityConfig.java
 
@@ -395,9 +450,9 @@ jar vtf easybank.jar|grep SecurityConfig
 jar xvf easybank.jar BOOT-INF/classes/com/hendisantika/onlinebanking/config/SecurityConfig.class
 ```
 
-3.用修复好的SecurityConfig.class覆盖上一步解压出来的原始文件
+**(3).用修复好的SecurityConfig.class覆盖上一步解压出来的原始文件**
 
-4.更新jar包
+**(4).更新jar包**
 
 ```
  jar uvf easybank.jar BOOT-INF/classes/com/hendisantika/onlinebanking/config/SecurityConfig.class
@@ -406,6 +461,7 @@ jar xvf easybank.jar BOOT-INF/classes/com/hendisantika/onlinebanking/config/Secu
 
 命令操作也可以参考`jar、war包热修复`
 
-#### **2.3 漏洞利用**
-#### **2.4 监控与应急响应**
+#### **4.3 漏洞利用**
+
+#### **4.4 监控与应急响应**
 
